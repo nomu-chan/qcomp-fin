@@ -1,0 +1,10 @@
+numpy
+pandas
+yfinance
+PyPortfolioOpt
+qiskit
+qiskit-optimization
+qiskit-algorithms
+matplotlib
+seaborn
+scipy
