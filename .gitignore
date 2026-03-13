@@ -2,9 +2,9 @@
 /.venv
 
 # Pycache and other compiled Python files
-__pycache__/
-*.py[cod]
-*$py.class
+src/__pycache__/
+src/*.py[cod]
+src/*$py.class
 
 # Data
 data/*.csv
