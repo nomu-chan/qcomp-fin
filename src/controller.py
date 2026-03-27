@@ -1,15 +1,13 @@
-# so uh, sa gemini muna ito cuz idk QUBO pa.
-
 from __future__ import annotations
 
 from pathlib import Path
 
 import numpy as np
-
+from src.etl import data_pipeline
 from classical_baseline import solve_max_sharpe
 from config import default_config
 from data_pipeline import download_close_prices, save_prices
-from qubo_builder import build_binary_selection_qubo, qubo_energy
+from src.utils.qubo_builder import build_binary_selection_qubo, qubo_energy
 
 
 def run() -> None:
@@ -51,5 +49,4 @@ def run() -> None:
     print("Sample feasible energy:", round(baseline_energy, 6))
 
 
-if __name__ == "__main__":
-    run()
+
