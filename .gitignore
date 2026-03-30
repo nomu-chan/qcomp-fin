@@ -10,3 +10,5 @@ src/*$py.class
 data/*.csv
 results/*
 !results/.gitkeep  # (Optional: lets you commit the folder but not the files)
+
+__pycache__

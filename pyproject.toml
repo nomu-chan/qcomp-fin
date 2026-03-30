@@ -3,9 +3,35 @@ name = "qcomp-fin"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.10"
+
+requires-python = ">=3.12"
 dependencies = [
-    "numpy>=2.2.6",
+    "custatevec-cu12>=1.12.0",
+    "cutensornet-cu12>=2.11.0",
+    "jijmodeling>=2.3.1",
+    "packaging>=26.0",
+    "qamomile[qiskit]>=0.10.0",
+    "qiskit-aer-gpu>=0.15.1",
+    "setuptools>=81.0.0",
+    "torch>=2.11.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.9.9,<0.10.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "custatevec-cu12>=1.12.0",
+    "numpy>=2.4.4",
     "pandas>=2.3.3",
+    "pyportfolioopt>=1.6.0",
+    "qiskit-aer>=0.17.2",
     "yfinance>=1.2.0",
 ]
+
+[tool.uv]
+package = false
+
+[tool.uv.extra-build-dependencies]
+cuquantum = ["setuptools"]
