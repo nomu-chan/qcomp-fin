@@ -120,7 +120,7 @@ class BaseQuantumPortfolio(Portfolio, ABC):
         executor: LocalExecutor, 
         min_result, 
         mu: pd.Series[Any]):
-        final_samples = exec_obj.sample(executor, 
+        final_samples = exec_obj.sample(executor, # type: ignore
             shots=1024, 
             bindings={
                 "gammas": min_result.x[:self.p].tolist(), 
