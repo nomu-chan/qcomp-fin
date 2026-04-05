@@ -470,7 +470,66 @@ def _(heatmap_view, mo, parento_view, ruggedness_view, squeeze_view):
 
 
 @app.cell
-def _():
+def _(df, mo):
+    # Marimo Sliders for interactive filtering
+    l_turnover = mo.ui.slider(df['lambda_turnover'].min(), df['lambda_turnover'].max(), step=0.1, label="Turnover Penalty")
+    mu_val = mo.ui.dropdown(options=[str(x) for x in df['mu_scalar'].unique()], label="Mu Scalar")
+
+    l_turnover, mu_val
+    return l_turnover, mu_val
+
+
+@app.cell
+def _(df, l_turnover, mu_val):
+    filtered_turnover = df[(df['lambda_turnover'] == l_turnover.value) & (df['mu_scalar'] == int(mu_val.value))]
+    filtered_turnover
+    return (filtered_turnover,)
+
+
+@app.cell
+def _(alt, filtered_turnover, l_turnover, mo, mu_val):
+
+    chart_turnover = alt.Chart(filtered_turnover).mark_circle(size=60).encode(
+        x=alt.X('annual_vol', title='Annual Volatility'),
+        y=alt.Y('expected_return', title='Expected Return'),
+        color=alt.Color('sharpe_ratio', scale=alt.Scale(scheme='viridis')),
+        tooltip=['K_target', 'lambda_risk', 'lambda_reward', 'sharpe_ratio', 'ruggedness']
+    ).properties(width=600, height=400, title="Quantum Efficient Frontier")
+
+    chart_turnover
+
+    mo.vstack([mo.hstack([l_turnover, mu_val]), chart_turnover])
+    return
+
+
+@app.cell
+def _(alt, df):
+    chart_q = alt.Chart(df).mark_rect().encode(
+            x=alt.X('ruggedness:Q', bin=alt.Bin(maxbins=30), title="Landscape Ruggedness"),
+            y=alt.Y('sharpe_ratio:Q', bin=alt.Bin(maxbins=30), title="Sharpe Ratio"),
+            color=alt.Color('count()', scale=alt.Scale(scheme='greens'), title="Frequency"),
+            tooltip=['count()']
+        ).properties(width=600, height=400, title="Landscape Ruggedness vs. Performance Density")
+
+    chart_q
+    return
+
+
+@app.cell
+def _(alt, df):
+    path_df = df[['lambda_risk', 'lambda_reward', 'lambda_cardinality', 'hhi_diversity']].copy()
+
+        # Altair parallel coordinates are a bit manual, but a simple Scatter Matrix works great in Marimo
+    chart_sc = alt.Chart(path_df).mark_circle(opacity=0.5).encode(
+        alt.X(alt.repeat("column"), type='quantitative'),
+        alt.Y(alt.repeat("row"), type='quantitative'),
+        color='hhi_diversity:Q'
+    ).repeat(
+        row=['lambda_risk', 'lambda_reward'],
+        column=['lambda_cardinality', 'hhi_diversity']
+    ).properties(title="Hyperparameter Interactions on Portfolio Diversity")
+
+    chart_sc
     return
 
 

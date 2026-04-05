@@ -1,5 +1,5 @@
-from a_to_refactor.src.controller import run, run_inspect
+from src import controller
 
 if __name__ == "__main__":
     print("Running...")
-    run()
+    controller.automated_grid_search()

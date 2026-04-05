@@ -52,10 +52,10 @@ def log_portfolio_results(result):
 def automated_grid_search():
     csv_filename = DATAPATH / 'quantum_grid_search_results.csv'
     # Define ranges
-    mu_scalars = [10, 100, 500] 
-    lambda_risks = [0.1, 0.5, 1.0, 5.0, 10.0]
-    lambda_turnover = [0.1, 1.0, 10.0] # High, Med, Low friction
-    lambda_cards = [1, 10, 50, 100, 500]
+    mu_scalars = [1, 10, 100, 500] 
+    lambda_risks = [0, 0.1, 0.5, 1.0, 5.0, 10.0]
+    lambda_turnover = [0, 0.1, 1.0, 10.0] # High, Med, Low friction
+    lambda_cards = [0, 1, 10, 50, 100, 500]
     lambda_reward = [5.0, 25.0, 50.0, 100.0, 200.0]
     k_targets = [3, 5]
     
