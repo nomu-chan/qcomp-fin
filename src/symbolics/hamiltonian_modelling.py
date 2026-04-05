@@ -41,7 +41,9 @@ class QuantumProblemModelingBuilder(ABC):
         lambda_reward: float = 0.5, 
         lambda_cardinality: float = 0.1,
         lambda_esg: float = 1.0,
-        n_bits: int = 1
+        n_bits: int = 1,
+        lambda_turnover=0.1, 
+        prev_weights=None
     ) -> Dict[str, Any]:
         """
         Maps Proxy data to the Symbolic Placeholders.
@@ -50,6 +52,8 @@ class QuantumProblemModelingBuilder(ABC):
         mu_scaled, sigma_scaled = proxy.get_moments(True, True, True)
         esg_scaled = proxy.esg_scores().values
         # Build the instance dictionary using your Constants
+        if prev_weights is None:
+            prev_weights = np.zeros(self.n_assets)
         instance_data = {
             # Financial Data
             HamiltonianPlaceholders.MU: mu_scaled,
@@ -65,7 +69,9 @@ class QuantumProblemModelingBuilder(ABC):
             HamiltonianPlaceholders.LAMBDA_ESG: lambda_esg,
             HamiltonianPlaceholders.LAMBDA_CARDINALITY: lambda_cardinality,
             HamiltonianPlaceholders.N_ASSETS: self.n_assets,
-            HamiltonianPlaceholders.N_INTEGER_BITS: n_bits
+            HamiltonianPlaceholders.N_INTEGER_BITS: n_bits,
+            HamiltonianPlaceholders.PREV_X: prev_weights,
+            HamiltonianPlaceholders.LAMBDA_TURNOVER: lambda_turnover,
         }
         logger.info("Instance Data:")
         logger.info(instance_data)
@@ -104,7 +110,7 @@ class BinaryQProb(QuantumProblemModelingBuilder):
         return self.decision_strategy.decode_expression(decisions)
     
 class IntegerQProb(QuantumProblemModelingBuilder):
-    def __init__(self, tickers: list[str], name: str = "IntegerPortfolio", n_bits=2):
+    def __init__(self, tickers: list[str], name: str = "IntegerPortfolio", n_bits=8):
         super().__init__(tickers, IntegerWeightingStrategy(len(tickers), n_bits), name)
     
     def decode_results(self, decisions: Dict[tuple[Any, Any], int]):

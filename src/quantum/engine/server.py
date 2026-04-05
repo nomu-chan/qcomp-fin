@@ -13,7 +13,7 @@ app = FastAPI()
 # --- INITIALIZE YOUR ENGINE ONCE ---
 # This triggers your _initialize_backend(GPU) logic immediately on startup
 digital_engine = GateBasedQuantumEngine(strategy=BackendStrategy.GPU)
-analog_engine = AnalogQuantumEngine(annealing_strategy=AnnealingStrategy.QUANTUM)
+analog_engine = AnalogQuantumEngine(annealing_strategy=AnnealingStrategy.BIFURCATION)
 
 def map_to_qasm_names(binding: dict) -> dict:
     mapped = {}

@@ -16,3 +16,5 @@ results/*
 !results/.gitkeep  # (Optional: lets you commit the folder but not the files)
 
 __pycache__
+data/analog_saves_2
+data/analog_saves

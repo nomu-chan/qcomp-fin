@@ -15,6 +15,7 @@ dependencies = [
     "yfinance",
     "openjij>=0.11.6",
     "pytest>=9.0.2",
+    "altair>=6.0.0",
 ]
 
 [dependency-groups]

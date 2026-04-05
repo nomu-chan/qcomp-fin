@@ -1,11 +1,12 @@
 from src.financial_context.command import FinancialContextCommand
-from src.portfolio.quantum_portfolio import QPortRiskRewardCardinality, QportHyperparameterProduct, QMethod, QPortRiskReward
+from src.portfolio.quantum_portfolio import QPortRiskRewardCardinality, QportHyperparameterProduct, QMethod, QPortRiskReward, QPortRiskRewardCardinalityTurnover
 from src.portfolio.portfolio_base import PortfolioResult
 from src.utils.logging_mod import get_logging
 from etc.config import DEFAULT_PROJECT_CONFIG, DATAPATH
 from src.portfolio.classical_portfolio import ClassicalPortfolio1
 import os
 import pandas as pd
+import time
 # Initialize specialized logging for the Quantum Pipeline
 logger = get_logging(__name__)
 
@@ -51,81 +52,91 @@ def log_portfolio_results(result):
 def automated_grid_search():
     csv_filename = DATAPATH / 'quantum_grid_search_results.csv'
     # Define ranges
-    mu_scalars = [1, 10, 100, 1000]
-    lambda_risks = [0.01, 0.1, 0.5, 1.0, 5.0]
-    lambda_cards = [0, 100, 1000, 10000, 100000]
-    lambda_reward = [0.1, 1.0, 10.0, 100.0]
-    k_targets = [2, 3, 5]
+    mu_scalars = [10, 100, 500] 
+    lambda_risks = [0.1, 0.5, 1.0, 5.0, 10.0]
+    lambda_turnover = [0.1, 1.0, 10.0] # High, Med, Low friction
+    lambda_cards = [1, 10, 50, 100, 500]
+    lambda_reward = [5.0, 25.0, 50.0, 100.0, 200.0]
+    k_targets = [3, 5]
+    
     
     print(f"🚀 Starting Grid Search: {len(lambda_risks) * len(lambda_cards) * len(k_targets)} iterations.")
     
 
     if not os.path.isfile(csv_filename):
         pd.DataFrame(columns=[
-            'lambda_risk', 'lambda_reward', 'lambda_cardinality', 'K_target', 
+            'lambda_risk', 'lambda_reward', 'lambda_cardinality', 'lambda_turnover','K_target', 
             'expected_return', 'annual_vol', 'sharpe_ratio', 
-            'active_assets', 'hhi_diversity', "base_energy", "neighbor_energies", "ruggedness", "mu_scalar", 'choice'
+            'active_assets', 'hhi_diversity', "base_energy", "neighbor_energies", "ruggedness", "mu_scalar", 'time_to_solve', 'portfolio_name', 'choice'
         ]).to_csv(csv_filename, index=False)
     for mu_scalar in mu_scalars:
-        for lrisk in lambda_risks:
-            for lcardinality in lambda_cards:
-                for kt in k_targets:
-                    for lreward in lambda_reward:
-                        proxy = FinancialContextCommand(DEFAULT_PROJECT_CONFIG.tickers, csv_path="./data/close_prices.csv",scalar_gain=mu_scalar)
-                        print(f"Testing: Risk={lrisk}, Card_Weight={lcardinality}, K={kt}...", end=" ", flush=True)
-                        
-                        hparams = QportHyperparameterProduct(
-                            p_qaoa_layers=3, 
-                            max_iterations=1024, 
-                            samples=1024,
-                            shots=2048, 
-                            seed=42, 
-                            lambda_cardinality=lcardinality,
-                            lambda_risk=lrisk, 
-                            lambda_reward=lreward, 
-                            k_cardinality=kt, 
-                            n_bits=8,
-                            mu_scalar=mu_scalar,
-                        )
+        for lturno in lambda_turnover:
+            for lrisk in lambda_risks:
+                for lcardinality in lambda_cards:
+                    for kt in k_targets:
+                        for lreward in lambda_reward:
+                            proxy = FinancialContextCommand(DEFAULT_PROJECT_CONFIG.tickers, csv_path="./data/close_prices.csv",scalar_gain=mu_scalar)
+                            print(f"Testing: Risk={lrisk}, Card_Weight={lcardinality}, K={kt}...", end=" ", flush=True)
+                            
+                            hparams = QportHyperparameterProduct(
+                                p_qaoa_layers=3, 
+                                max_iterations=1024, 
+                                samples=1024,
+                                shots=2048, 
+                                seed=42, 
+                                lambda_cardinality=lcardinality,
+                                lambda_risk=lrisk, 
+                                lambda_reward=lreward, 
+                                k_cardinality=kt, 
+                                n_bits=8,
+                                mu_scalar=mu_scalar,
+                                lambda_turnover=lturno,
+                                prev_weights=None
+                            )
 
-                        portfolio_model = QPortRiskRewardCardinality(
-                            name="Quantum-Alpha-Risk-Reward-Cardinality-Diversifier",
-                            proxy=proxy, hparaproduct=hparams
-                        )
-                        
-                        try:
-                            # metrics is an instance of PortfolioResult
-                            metrics = portfolio_model.run(QMethod.ANALOG_BASED)
+                            portfolio_model = QPortRiskRewardCardinalityTurnover(
+                                name="Quantum-Beta-Risk-Reward-Cardinality-Turnover-Portfolio",
+                                proxy=proxy, hparaproduct=hparams
+                            )
                             
-                            # Calculate derived metrics from the weights dictionary
-                            weights_list = list(metrics.weights.values())
-                            active_assets = sum(1 for w in weights_list if w > 1e-4) # Count non-zero weights
-                            
-                            # Herfindahl-Hirschman Index (Diversity)
-                            # HHI = sum(w^2). Lower is more diverse.
-                            hhi = sum(w**2 for w in weights_list) if weights_list else 1.0
-                            row = pd.DataFrame([{
-                                'lambda_risk': lrisk,
-                                'lambda_reward': lreward,
-                                'lambda_cardinality': lcardinality,
-                                'K_target': kt,
-                                'expected_return': metrics.expected_return,
-                                'annual_vol': metrics.volatility,
-                                'sharpe_ratio': metrics.sharpe_ratio,
-                                'active_assets': active_assets,
-                                'hhi_diversity': hhi,
-                                'base_energy': metrics.config.get("base_energy", 0.0),
-                                'neighbor_energies': metrics.config.get("neighbor_energies", 0.0),
-                                'ruggedness': metrics.config.get("ruggedness", 0.0),
-                                "mu_scalar": mu_scalar,
-                                'choice': metrics.weights
-                            }])
-                            
-                            row.to_csv(csv_filename, mode='a', header=False, index=False)
-                            print("✅ Saved.")
-                            
-                        except Exception as e:
-                            print(f"❌ Error: {e}")
+                            try:
+                                start_time = time.perf_counter()
+                                # metrics is an instance of PortfolioResult
+                                metrics = portfolio_model.run(QMethod.ANALOG_BASED)
+                                tts = time.perf_counter() - start_time
+                                
+                                # Calculate derived metrics from the weights dictionary
+                                weights_list = list(metrics.weights.values())
+                                active_assets = sum(1 for w in weights_list if w > 1e-4) # Count non-zero weights
+                                
+                                # Herfindahl-Hirschman Index (Diversity)
+                                # HHI = sum(w^2). Lower is more diverse.
+                                hhi = sum(w**2 for w in weights_list) if weights_list else 1.0
+                                row = pd.DataFrame([{
+                                    'lambda_risk': lrisk,
+                                    'lambda_reward': lreward,
+                                    'lambda_cardinality': lcardinality,
+                                    'lambda_turnover': lturno,
+                                    'K_target': kt,
+                                    'expected_return': metrics.expected_return,
+                                    'annual_vol': metrics.volatility,
+                                    'sharpe_ratio': metrics.sharpe_ratio,
+                                    'active_assets': active_assets,
+                                    'hhi_diversity': hhi,
+                                    'base_energy': metrics.config.get("base_energy", 0.0),
+                                    'neighbor_energies': metrics.config.get("neighbor_energies", 0.0),
+                                    'ruggedness': metrics.config.get("ruggedness", 0.0),
+                                    "mu_scalar": mu_scalar,
+                                    "time_to_solve": tts,
+                                    'portfolio_name': portfolio_model.name,
+                                    'choice': metrics.weights
+                                }])
+                                
+                                row.to_csv(csv_filename, mode='a', header=False, index=False)
+                                print("✅ Saved.")
+                                
+                            except Exception as e:
+                                print(f"❌ Error: {e}")
 
     print(f"✅ Grid Search Complete. Final results in '{csv_filename}'")
     
@@ -156,11 +167,12 @@ def run_portfolio_stress_test():
         lambda_risk=1.5,
         lambda_reward=5,
         k_cardinality=3,
-        n_bits = 6
+        n_bits = 6,
+        lambda_turnover=1
     )
 
-    portfolio_model = QPortRiskRewardCardinality(
-        name="Quantum-Alpha-Diversifier",
+    portfolio_model = QPortRiskRewardCardinalityTurnover(
+        name="Quantum-Beta-Diversifier",
         proxy=proxy,
         hparaproduct=hparams
     )
@@ -184,4 +196,5 @@ def run_portfolio_stress_test():
         log_portfolio_results(i)
     portfolio_model.run_quantum_annealing_analysis()
 if __name__ == "__main__":
+    # run_portfolio_stress_test()
     automated_grid_search()

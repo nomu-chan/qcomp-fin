@@ -23,12 +23,14 @@ class HamiltonianPlaceholders:
     # Constraint IDs
     CARD_LIMIT = "cardinality_limit"
     MAX_UNITS = "max_units"
+    PREV_X = "x_previous"
     
     # Force Strengths
     LAMBDA_RISK = "lambda_risk"
     LAMBDA_REWARD = "lambda_reward"
     LAMBDA_CARDINALITY = "lambda_cardinality"
     LAMBDA_ESG = "lambda_esg"
+    LAMBDA_TURNOVER = "lambda_turnover"
     
     # constants
     N_ASSETS = "n_assets"
@@ -165,3 +167,36 @@ class RiskCovarianceIntegerStrategy(HamiltonianStrategy):
         ]) * lambda_risk
         
         return StrategyOutput(risk_expr, [HamiltonianPlaceholders.SIGMA, HamiltonianPlaceholders.LAMBDA_RISK]), problem
+    
+class TransactionCostStrategy(HamiltonianStrategy):
+    """
+    Penalizes deviations from a reference portfolio to minimize turnover.
+    Formula: lambda * sum((x[i] - x_prev[i])^2)
+    """
+    def build_expression(self,
+        x: jm.DecisionVar,
+        problem: jm.DecoratedProblem,
+        n_assets: int,
+        strategy_output: StrategyOutput,
+        input: int | float | None = None
+    ) -> tuple[StrategyOutput, jm.DecoratedProblem]:
+        
+        # 1. Define Placeholders
+        # x_prev is a vector of your current holdings (0 or 1 for binary, or integer weights)
+        x_prev = problem.Placeholder(HamiltonianPlaceholders.PREV_X, shape=(n_assets,), dtype=float)
+        lambda_turnover = problem.Placeholder(HamiltonianPlaceholders.LAMBDA_TURNOVER, dtype=float)
+        
+        # 2. Determine which variable to use (Binary x or Integer weights)
+        # If strategy_output has asset_expressions, we are in an Integer model.
+        current_assets = strategy_output.asset_expressions if strategy_output.asset_expressions else [x[i] for i in range(n_assets)]
+        
+        # 3. Define the Quadratic Penalty: (current - previous)^2
+        # Expanding (x - p)^2 = x^2 - 2px + p^2. 
+        # Since p^2 is a constant, we focus on x^2 - 2px.
+        turnover_expr = jm.sum([
+            (current_assets[i] - x_prev[i])**2 for i in range(n_assets)
+        ]) * lambda_turnover
+        
+        placeholders = [HamiltonianPlaceholders.PREV_X, HamiltonianPlaceholders.LAMBDA_TURNOVER]
+        
+        return StrategyOutput(turnover_expr, placeholders), problem

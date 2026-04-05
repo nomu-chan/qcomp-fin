@@ -9,7 +9,7 @@ from src.symbolics.hamiltonian_modelling import QuantumProblemModelingBuilder, I
 from src.quantum.middleware.instantiator import InstantiatorCommand
 from src.quantum.middleware.minimizer import MinimizerCommand
 from src.quantum.middleware.bridge import ModelBridgeCommand
-from src.symbolics.hamiltonians import RewardMuIntegerStrategy, RiskCovarianceIntegerStrategy, CardinalityBinaryStrategy
+from src.symbolics.hamiltonians import RewardMuIntegerStrategy, RiskCovarianceIntegerStrategy, CardinalityBinaryStrategy, TransactionCostStrategy
 from src.utils.logging_mod import get_logging
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,9 +28,11 @@ class QportHyperparameterProduct:
     lambda_risk: float = 0.5
     lambda_reward: float = 0.5
     lambda_cardinality: float = 100.0
+    lambda_turnover: float = 1.0
     lambda_esg: float = 1.0
     n_bits: int = 4
     mu_scalar: int = 10
+    prev_weights: float | None = None
 
 
 class QuantumPortfolioComposite(PorfolioBase, ABC):
@@ -93,7 +95,8 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
             lambda_reward = self.hparaproduct.lambda_reward,
             lambda_cardinality= self.hparaproduct.lambda_cardinality,
             lambda_esg=self.hparaproduct.lambda_esg,
-            n_bits=self.hparaproduct.n_bits
+            n_bits=self.hparaproduct.n_bits,
+            lambda_turnover=self.hparaproduct.lambda_turnover
         )
         qprod = self.instantiator.get_qubo_prod(self.problem, self.expected_variables, instance)
         qubo_dict = qprod.qubo_dict
@@ -176,7 +179,8 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
             lambda_reward=self.hparaproduct.lambda_reward,
             lambda_cardinality=self.hparaproduct.lambda_cardinality,
             lambda_esg=self.hparaproduct.lambda_esg,
-            n_bits=self.hparaproduct.n_bits
+            n_bits=self.hparaproduct.n_bits,
+            prev_weights=self.hparaproduct.prev_weights
         )
         qprod = self.instantiator.get_qubo_prod(self.problem, self.expected_variables, instance)
         config_add = {} # Initialize as empty dict
@@ -232,10 +236,7 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
             )
             
             # Add landscape metrics to the config for the final report
-            config_add = {
-                "ruggedness_coeff": round(landscape_data["ruggedness"], 4),
-                "optimal_energy": round(landscape_data["base_energy"], 2)
-            }
+
             
             decisions = selections
             config_add = self.map_landscape_ruggedness(bitstring, qprod.qubo_dict, 1)
@@ -264,6 +265,24 @@ class QPortRiskRewardCardinality(QuantumPortfolioComposite):
             RewardMuIntegerStrategy(),
             RiskCovarianceIntegerStrategy(),
             CardinalityBinaryStrategy()
+        ])
+        super().__init__(name, proxy, symbolics, hparaproduct)
+        
+
+class QPortRiskRewardCardinalityTurnover(QuantumPortfolioComposite):
+    def __init__(self, 
+        name: str, 
+        proxy: FinancialContextCommand, 
+        hparaproduct: QportHyperparameterProduct) -> None:
+        symbolics = IntegerQProb(
+            proxy.get_context().tickers,
+            "QuantumPortfolio/Integer/RiskRewardCardinality",
+            hparaproduct.n_bits
+            ).add_strategy_list([
+            RewardMuIntegerStrategy(),
+            RiskCovarianceIntegerStrategy(),
+            CardinalityBinaryStrategy(),
+            TransactionCostStrategy()
         ])
         super().__init__(name, proxy, symbolics, hparaproduct)
         

@@ -14,7 +14,7 @@ class ProjectConfig:
     penalty_strength: float = 10.0   # Penalty strength for the cardinality constraint in the QUBO model
 
 
-# 10 default tickers from the S&P 500, representing a mix of tech and other sectors.
+# 16 default tickers from the S&P 500, representing a mix of tech and other sectors.
 DEFAULT_TICKERS = [
     "AAPL", # Apple Inc.
     "MSFT", # Microsoft
@@ -26,6 +26,12 @@ DEFAULT_TICKERS = [
     "CRM", # Salesforce
     "ORCL", # Oracle
     "INTC", # Intel
+    "JPM", 
+    "GS",
+    "XOM", 
+    "CVX",
+    "GLD", 
+    "TLT"
 ]
 
 DEFAULT_PROJECT_CONFIG = ProjectConfig(tickers=DEFAULT_TICKERS)
