@@ -1,0 +1,15 @@
+{
+  "venvPath": ".",
+
+  "executionEnvironments": [
+    {
+      "root": "src/quantum/engine/*",
+      "venv": ".venv-gpu"
+    }
+    ,
+    {
+      "root": ".",
+      "venv": ".venv-qam"
+    }
+  ]
+}

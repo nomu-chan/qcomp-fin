@@ -1,0 +1,10 @@
+{
+  "folders": [
+    { "path": "src/quantum/engine" }  // The Engine
+  ],
+  "settings": {
+    "python.analysis.extraPaths": [
+        "./src"
+    ]
+  }
+}
