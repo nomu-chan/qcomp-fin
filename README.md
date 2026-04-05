@@ -6,23 +6,37 @@ Goal: build an Efficient Frontier workflow with a classical Markowitz baseline, 
 
 ## 1) Quick Start
 
-Open a terminal in the project root and run:
+This project uses a Dual-Environment Architecture to separate high-level financial modeling from heavy GPU-accelerated simulation. This prevents C++ build conflicts and keeps the workspace clean.
 
-python -m venv .venv
+Prerequisites:
 
-Windows PowerShell:
+- uv installed (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
+- NVIDIA Drivers & CUDA 12.x (for GPU acceleration)
 
-.\.venv\Scripts\Activate.ps1
+### Initialize the Environments
 
-Install dependencies:
+We use uv sync to create two distinct environments. Run these commands from the project root:
 
-pip install -r requirements.txt
+#### A. The Architect (Modeling & Dashboards)
 
-Run the baseline pipeline:
+This environment contains qamomile, marimo, and financial libraries.
 
-python src/main.py
+```bash
+uv venv .venv-qam --python 3.12
+uv sync --extra modeling --python ./.venv-qam/bin/python
+```
+
+#### B. The Engine (GPU Executor)
+
+This environment contains qiskit-aer-gpu and cuquantum.
+
+```bash
+uv venv .venv-gpu --python 3.12
+uv sync --extra gpu --python ./.venv-gpu/bin/python
+```
 
 What this does:
+
 - Downloads 5 years of daily close prices for 10 tech stocks with yfinance.
 - Computes expected returns and covariance matrix.
 - Solves a classical max-Sharpe portfolio with PyPortfolioOpt.
@@ -41,6 +55,7 @@ What this does:
 ## 3) First Edits You Should Make
 
 In src/config.py:
+
 - tickers: your chosen 10-20 names.
 - target_cardinality: number of assets allowed in selected basket.
 - risk_aversion and penalty_strength: trade-off tuning parameters.
@@ -48,6 +63,7 @@ In src/config.py:
 ## 4) Next Implementation Step
 
 After this setup runs, add a new file for Qiskit Optimization integration:
+
 - Convert the QUBO matrix into a QuadraticProgram.
 - Solve with a local QAOA sampler.
 - Save bitstring frequency distribution and best portfolio candidate to results/.

@@ -1,0 +1,10 @@
+{
+    "python.analysis.extraPaths": [
+        "./.venv-gpu/lib/python3.12/site-packages",
+        "./.venv-qam/lib/python3.12/site-packages"
+    ],
+    "python.defaultInterpreterPath": "./.venv-qam/bin/python",
+    "python.analysis.include": [
+        "src"
+    ]
+}

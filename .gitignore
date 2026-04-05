@@ -1,6 +1,10 @@
 # env
 /.venv
 
+.venv-gpu
+.venv-qam
+
+
 # Pycache and other compiled Python files
 src/__pycache__/
 src/*.py[cod]
