@@ -1,0 +1,71 @@
+====================================================
+      LAYER 4: RIGOROUS STATISTICAL REPORT          
+====================================================
+
+--- 1. INTERACTION REGRESSION SUMMARY ---
+                            OLS Regression Results                            
+==============================================================================
+Dep. Variable:           sharpe_ratio   R-squared:                       0.409
+Model:                            OLS   Adj. R-squared:                  0.407
+Method:                 Least Squares   F-statistic:                     182.8
+Date:                Wed, 08 Apr 2026   Prob (F-statistic):               0.00
+Time:                        19:52:39   Log-Likelihood:                -500.62
+No. Observations:                4236   AIC:                             1035.
+Df Residuals:                    4219   BIC:                             1143.
+Df Model:                          16                                         
+Covariance Type:            nonrobust                                         
+====================================================================================================================
+                                                       coef    std err          t      P>|t|      [0.025      0.975]
+--------------------------------------------------------------------------------------------------------------------
+Intercept                                            1.2176      0.035     35.166      0.000       1.150       1.285
+method_clean[T.Discrete_Baseline]                    0.0459      0.059      0.784      0.433      -0.069       0.161
+method_clean[T.Gate_based_QAOA]                     -0.3011      0.040     -7.538      0.000      -0.379      -0.223
+method_clean[T.Ideal_Baseline]                       0.3069      0.056      5.518      0.000       0.198       0.416
+method_clean[T.Quantum_Annealing]                    0.0004      0.049      0.007      0.994      -0.096       0.097
+method_clean[T.Sim__Bifurcation]                    -0.0104      0.069     -0.150      0.881      -0.146       0.125
+log_ruggedness                                      -0.0095      0.018     -0.541      0.589      -0.044       0.025
+method_clean[T.Discrete_Baseline]:log_ruggedness     0.1075      0.028      3.836      0.000       0.053       0.162
+method_clean[T.Gate_based_QAOA]:log_ruggedness       0.0107      0.031      0.352      0.725      -0.049       0.071
+method_clean[T.Ideal_Baseline]:log_ruggedness     -8.39e-17   5.93e-17     -1.414      0.157      -2e-16    3.24e-17
+method_clean[T.Quantum_Annealing]:log_ruggedness    -0.0004      0.025     -0.018      0.986      -0.049       0.048
+method_clean[T.Sim__Bifurcation]:log_ruggedness     -0.0547      0.065     -0.843      0.399      -0.182       0.073
+n_assets                                            -0.0182      0.005     -3.392      0.001      -0.029      -0.008
+method_clean[T.Discrete_Baseline]:n_assets           0.0315      0.009      3.611      0.000       0.014       0.049
+method_clean[T.Gate_based_QAOA]:n_assets             0.0153      0.006      2.461      0.014       0.003       0.027
+method_clean[T.Ideal_Baseline]:n_assets              0.0303      0.009      3.471      0.001       0.013       0.047
+method_clean[T.Quantum_Annealing]:n_assets           0.0002      0.008      0.026      0.979      -0.015       0.015
+method_clean[T.Sim__Bifurcation]:n_assets            0.0095      0.011      0.883      0.377      -0.012       0.030
+==============================================================================
+Omnibus:                     1750.605   Durbin-Watson:                   1.152
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             8098.834
+Skew:                          -1.985   Prob(JB):                         0.00
+Kurtosis:                       8.488   Cond. No.                     6.11e+17
+==============================================================================
+
+Notes:
+[1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
+[2] The smallest eigenvalue is 5.99e-31. This might indicate that there are
+strong multicollinearity problems or that the design matrix is singular.
+
+--- 2. PAIRED WILCOXON TESTS (vs. Baseline) ---
+No paired data available for testing.
+
+--- 3. BOOTSTRAP 95% CONFIDENCE INTERVALS ---
+             method  Sharpe_Mean_LCB  Sharpe_Mean_UCB
+     Ideal Baseline         1.594509         1.599533
+  Discrete Baseline         1.395746         1.427613
+   Sim. Bifurcation         1.104872         1.176710
+  Quantum Annealing         1.081740         1.128767
+Classical Annealing         1.079724         1.127585
+    Gate-based QAOA         0.885249         0.911877
+
+--- 4. ALGORITHMIC SCALING EXPONENTS ---
+             method  exponent
+     Ideal Baseline  0.016357
+  Discrete Baseline  0.033157
+Classical Annealing  0.165763
+   Sim. Bifurcation  0.182535
+  Quantum Annealing  0.237330
+    Gate-based QAOA  1.886751
+
+--- END OF REPORT ---

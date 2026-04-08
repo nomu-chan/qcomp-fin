@@ -1,0 +1,29 @@
+SUMMARY REPORT: Layer 1 Problem Characterization
+Target Solver: Classical Ideal Baseline
+==================================================
+
+--- DATASET SCALE ---
+Total Problem Instances: 394
+Range of N (Assets): 4 - 8
+Range of Bit Depth: 1 - 3
+
+--- LANDSCAPE RUGGEDNESS ---
+Mean Ruggedness: 0.0000
+Max Ruggedness: 0.0000
+Ruggedness Std Dev: 0.0000
+Correlation (Lambda_Risk vs Ruggedness): nan
+
+--- CONSTRAINT DYNAMICS ---
+Mean K/N Ratio (Tightness): 0.4385
+Mean Active Assets in Ground State: 4.00
+
+--- PARAMETER CORRELATIONS ---
+               n_assets    n_bits  lambda_risk  lambda_reward  ruggedness
+n_assets       1.000000 -0.003122    -0.005091      -0.001314         NaN
+n_bits        -0.003122  1.000000    -0.003115      -0.000804         NaN
+lambda_risk   -0.005091 -0.003115     1.000000      -0.169350         NaN
+lambda_reward -0.001314 -0.000804    -0.169350       1.000000         NaN
+ruggedness          NaN       NaN          NaN            NaN         NaN
+
+==================================================
+End of Report

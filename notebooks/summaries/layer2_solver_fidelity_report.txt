@@ -1,0 +1,32 @@
+LAYER 2 REPORT: Solver Outcome & Statistical Fidelity
+======================================================================
+
+--- SECTION 1: TOPOLOGICAL PERCEPTION (Kruskal-Wallis) ---
+H-Statistic: 2088.4380
+p-value:     0.0000e+00
+Finding:     STATISTICALLY SIGNIFICANT DIVERGENCE
+Note: High H-stat confirms that solver paradigms perceive unique ruggedness
+profiles for identical problem instances.
+
+--- SECTION 2: SOLVER PERFORMANCE & CONSTRAINT FIDELITY ---
+Method                    | Med Sharpe | Mean K-Err | Spearman Rho
+----------------------------------------------------------------------
+Ideal Baseline            | 1.6211     | 1.6599     | nan
+Discrete Baseline         | 1.5106     | 1.4427     | -0.5776
+Sim. Bifurcation          | 1.2295     | 0.7143     | -0.2961
+Quantum Annealing         | 1.2003     | 0.7922     | -0.2520
+Classical Annealing       | 1.1988     | 0.7886     | -0.2535
+Gate-based QAOA           | 0.9658     | 2.3678     | 0.0243
+
+--- SECTION 3: COMPUTATIONAL EFFICIENCY ---
+Method                    | Avg Time (s) | Max Time (s)
+------------------------------------------------------------
+Ideal Baseline            | 0.01532      | 0.02252
+Discrete Baseline         | 0.01478      | 0.07854
+Sim. Bifurcation          | 0.30624      | 0.62869
+Quantum Annealing         | 6.00056      | 9.78374
+Classical Annealing       | 0.12271      | 0.16068
+Gate-based QAOA           | 2.93234      | 431.60807
+
+======================================================================
+End of Layer 2 Report
