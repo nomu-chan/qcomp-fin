@@ -11,7 +11,7 @@ src/*.py[cod]
 src/*$py.class
 
 # Data
-data/*.csv
+
 results/*
 !results/.gitkeep  # (Optional: lets you commit the folder but not the files)
 
