@@ -57,8 +57,9 @@ class AnalogQuantumEngine:
     
     def _execute_simulated_bifurcation(self, matrix):
         """GPU-accelerated Bifurcation via PyTorch."""
+        logger.info(f"Received qubo matrix {matrix}")
         Q = torch.tensor(matrix, dtype=torch.float32, device=self.device)
-        
+        logger.info(f"Transformed to Torch matrix {Q}")
         # SB API Fix: 
         # 1. 'domain="binary"' defines it as a QUBO {0, 1}
         # 2. 'model="ballistic"' replaces the ballistic=True flag
@@ -68,7 +69,7 @@ class AnalogQuantumEngine:
             agents=self._num_reads, 
             max_steps=self._num_reads, 
             mode="ballistic",
-            verbose=False
+            verbose=True
         )
         
         return best_vector.cpu().numpy().tolist()

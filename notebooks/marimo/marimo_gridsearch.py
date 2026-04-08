@@ -10,7 +10,7 @@ def _():
     import pandas as pd
     import altair as alt
     import os
-    csv_filename='./data/quantum_grid_search_results.csv'
+    csv_filename='./data/classical_grid_search_results.csv'
 
     # This cell will refresh every time the file size changes if you 
     # wrap it in a refresh logic, or you can just run it manually.
@@ -30,8 +30,30 @@ def load_data(csv_filename, mo, pd):
     df = pd.DataFrame()
     try:
         # Standardize path
-        df = pd.read_csv(csv_filename)
-    except Exception:
+        df = pd.read_csv(csv_filename, dtype = {
+            'lambda_risk': float,
+            'lambda_reward': float,
+            'lambda_cardinality': float,
+            'lambda_turnover': float,
+            'K_target': int,
+            'expected_return': float,
+            'annual_vol': float,
+            'sharpe_ratio': float,
+            'active_assets': int,
+            'hhi_diversity': float,
+            'base_energy': float,
+            'ruggedness': float,
+            'mu_scalar': int,
+            'time_to_solve': float,
+            'portfolio_name': str,
+            # 'neighbor_energies' and 'choice' remain objects/strings
+            'neighbor_energies': str,
+            'choice': str
+        },
+        low_memory=False)
+        df = df.drop(['portfolio_name'])
+    except Exception as e:
+        print(e)
         pass
 
     mo.plain(df.head())
@@ -39,16 +61,23 @@ def load_data(csv_filename, mo, pd):
 
 
 @app.cell
-def ui_controls(df, mo):
+def ui_controls(df, mo, pd):
     mo.stop(df.empty, mo.md("## ❌ Data not found."))
 
     def create_log_indexed_slider(column, label):
-        unique_vals = sorted(df[column].unique())
+        # 1. Force to numeric, turning strings/errors into NaN
+        numeric_series = pd.to_numeric(df[column], errors='coerce')
+
+        # 2. Drop NaNs and get unique values
+        unique_vals = sorted(numeric_series.dropna().unique())
+
+        if not unique_vals:
+            return mo.ui.slider(0, 1, label=f"{label} (No Data)")
+
         slider = mo.ui.slider(
-            start=0,
-            stop=len(unique_vals) - 1,
-            step=1,
-            value=len(unique_vals) - 1,
+            start=0, 
+            stop=len(unique_vals) - 1, 
+            step=1, 
             label=label
         )
         return slider, unique_vals
@@ -186,13 +215,15 @@ def display_results(
     risk_idx,
     risk_vals,
 ):
+
     filtered = df[
-            (df['lambda_risk'] == risk_vals[int(risk_idx.value)]) &
-            (df['lambda_reward'] == reward_vals[int(reward_idx.value)]) &
-            (df['lambda_cardinality'] == card_vals[int(card_idx.value)]) &
-            (df['K_target'] == int(k_selector.value))
-        ]
-    filtered
+        (df['lambda_risk'] == risk_vals[int(risk_idx.value)]) &
+        (df['lambda_reward'] == reward_vals[int(reward_idx.value)]) &
+        (df['lambda_cardinality'] == card_vals[int(card_idx.value)]) &
+        (df['K_target'] == int(k_selector.value))
+    ]
+
+    (filtered,)
     return (filtered,)
 
 
@@ -373,80 +404,97 @@ def _(alt, df, mo):
 
 
 @app.cell
-def _(alt, df, mo, pd):
+def _(df, mo):
 
-    # 1. Pre-process for Log scale stability
-    clean_df = df.dropna(subset=["lambda_cardinality"]).copy()
-    clean_df["ruggedness_clipped"] = clean_df["ruggedness"]
+    # 1. Define the Options for the Dropdown
+    # Keys are User-Friendly labels, Values are the actual column names in your DF
+    color_options = {
+        "Cardinality Penalty": "lambda_cardinality",
+        "Risk Penalty": "lambda_risk",
+        "Reward Weight": "lambda_reward",
+        "Active Assets": "active_assets",
+        "Method": "method",
+        "TTS": "time_to_solve",
+        "Mean Neighborhood Energy": "mean_neighborhood_energy",
+        "Integer Bits": "n_bits",
+        "P layers" : "p_layers"
+    }
 
-    # 2. Define an Interval Selection (The "Brush")
-    # This allows you to drag a rectangle over points
-    brush = alt.selection_interval(name="brush")
-
-    # 3. BACKGROUND LAYERS (Green Box & Lines)
-    success_zone = (
-        alt.Chart(
-            pd.DataFrame(
-                {
-                    "ruggedness_clipped": [1e-2],
-                    "x2": [100],
-                    "sharpe_ratio": [1.0],
-                    "y2": [2.0],
-                }
-            )
-        )
-        .mark_rect(fill="green", opacity=0.15)
-        .encode(x="ruggedness_clipped:Q", x2="x2:Q", y="sharpe_ratio:Q", y2="y2:Q")
+    # 2. Create the Dropdown UI
+    color_selector = mo.ui.dropdown(
+        options=color_options, 
+        value="Cardinality Penalty", # Default value
+        label="Color by variable:"
     )
+    clean_df = df.copy()
 
-    # 4. POINTS LAYER
-    # We add the brush selection here
-    points = (
-        alt.Chart(clean_df)
-        .mark_circle(size=70)
-        .encode(
-            x=alt.X(
-                "ruggedness_clipped:Q",
-                scale=alt.Scale(type="log", domain=[1e-2, 1e7], clamp=False),
-                title="Ruggedness (Log Scale)",
-            ),
-            y=alt.Y(
-                "sharpe_ratio:Q",
-                scale=alt.Scale(domain=[-0.6, 2.0]),
-                title="Sharpe Ratio",
-            ),
-            color=alt.condition(
-                brush,
-                alt.Color(
-                    "lambda_cardinality:N", scale=alt.Scale(scheme="viridis")
+
+    return clean_df, color_selector
+
+
+@app.cell
+def _(alt, clean_df, mo, pd):
+
+    # 3. Build the Dynamic Chart
+    # We wrap this in a function or cell that reacts to 'color_selector.value'
+    def create_rugged_chart(target_color_column):
+        # Interval selection for brushing
+        brush = alt.selection_interval(name="brush")
+    
+        if clean_df.empty:
+            return mo.md("No data available")
+    
+        # Background Success Zone
+        success_zone = alt.Chart(pd.DataFrame({
+            "ruggedness_clipped": [1e-2], "x2": [100],
+            "sharpe_ratio": [1.0], "y2": [2.0]
+        })).mark_rect(fill="green", opacity=0.15).encode(
+            x="ruggedness_clipped:Q", x2="x2:Q", y="sharpe_ratio:Q", y2="y2:Q"
+        )
+    
+        # Main Points Layer
+        points = (
+                alt.Chart(clean_df)
+            .mark_circle(size=70)
+            .encode(
+                x=alt.X("ruggedness:Q", 
+                        scale=alt.Scale(type="log", domain=[1e-2, 1e7]), 
+                        title="Ruggedness (Log)"),
+                y=alt.Y("sharpe_ratio:Q", 
+                        scale=alt.Scale(domain=[-0.6, 2.0]), 
+                        title="Sharpe Ratio"),
+                # DYNAMIC COLOR ENCODING
+                color=alt.condition(
+                    brush,
+                    alt.Color(f"{target_color_column}:N", scale=alt.Scale(scheme="viridis")),
+                    alt.value("lightgray")
                 ),
-                alt.value("lightgray"),
-            ),
-            tooltip=[
-                "lambda_risk",
-                "lambda_reward",
-                "lambda_cardinality",
-                "sharpe_ratio",
-                "ruggedness",
-            ],
-            opacity=alt.condition(brush, alt.value(0.8), alt.value(0.2)),
+                tooltip=["lambda_risk", "lambda_reward", "lambda_cardinality", "sharpe_ratio", "ruggedness", "time_to_solve", "mean_neighborhood_energy"],
+                opacity=alt.condition(brush, alt.value(0.8), alt.value(0.2))
+            )
+            .add_params(brush)
         )
-        .add_params(brush)
-    )
 
-    # 5. Build and Wrap
-    chart = alt.layer(success_zone, points).properties(
-        width=500, height=400, title="Interactive Ruggedness Drill-Down"
-    ).interactive()
+        return alt.layer(success_zone, points).properties(
+            width=500, height=400, title=f"Ruggedness vs {target_color_column}"
+        ).interactive()
 
-    # Wrap in Marimo UI to catch the selection
-    rugged_chart_ui = mo.ui.altair_chart(chart)
+
+    return (create_rugged_chart,)
+
+
+@app.cell
+def _(color_selector, create_rugged_chart, mo):
+    # 4. Final Assembly
+    chart_instance = create_rugged_chart(color_selector.value)
+    rugged_chart_ui = mo.ui.altair_chart(chart_instance)
 
     ruggedness_view = mo.vstack([
-                mo.md("### 🌑 Ruggedness:"),
-                mo.md("Green Region is a well rugged region."),
-                rugged_chart_ui # Displays data selected by your brush
-            ])
+        mo.md("### 🌑 Ruggedness Drill-Down:"),
+        color_selector,  # Dropdown appears above the chart
+        mo.md(f"Currently coloring by: **{color_selector.value}**"),
+        rugged_chart_ui
+    ])
 
     ruggedness_view
     return (ruggedness_view,)
@@ -480,25 +528,67 @@ def _(df, mo):
 
 
 @app.cell
-def _(df, l_turnover, mu_val):
-    filtered_turnover = df[(df['lambda_turnover'] == l_turnover.value) & (df['mu_scalar'] == int(mu_val.value))]
+def _(filtered_turnover):
     filtered_turnover
-    return (filtered_turnover,)
+    return
 
 
 @app.cell
-def _(alt, filtered_turnover, l_turnover, mo, mu_val):
+def _(df, l_turnover, mo, mu_val):
+    # 1. Guard against uninitialized UI
+    mo.stop(l_turnover.value is None or mu_val.value is None, mo.md("### ⏳ Select Parameters"))
 
-    chart_turnover = alt.Chart(filtered_turnover).mark_circle(size=60).encode(
-        x=alt.X('annual_vol', title='Annual Volatility'),
-        y=alt.Y('expected_return', title='Expected Return'),
-        color=alt.Color('sharpe_ratio', scale=alt.Scale(scheme='viridis')),
-        tooltip=['K_target', 'lambda_risk', 'lambda_reward', 'sharpe_ratio', 'ruggedness']
-    ).properties(width=600, height=400, title="Quantum Efficient Frontier")
+    # 2. Filter the data explicitly here
+    # This ensures 'filtered_turnover' is defined in this scope
+    try:
+        mu_selection = int(mu_val.value)
+        filtered_df = df[
+            (df['lambda_turnover'] == float(l_turnover.value)) & 
+            (df['mu_scalar'] == mu_selection)
+        ].copy()
+    except (ValueError, TypeError):
+        mo.md("❌ Selection Error.")
+    return (mu_selection,)
 
-    chart_turnover
 
-    mo.vstack([mo.hstack([l_turnover, mu_val]), chart_turnover])
+@app.cell
+def _(alt, df, l_turnover, mo, mu_selection, mu_val, pd):
+    # mo.stop(l_turnover.value is None or mu_val.value is None)
+
+    # All these variables are now LOCAL to this function
+    # They won't clash with 'points' or 'chart' in other cells
+    mu_selection_1 = int(mu_val.value)
+    _filtered = df[
+        (df['lambda_turnover'] == float(l_turnover.value)) & 
+        (df['mu_scalar'] == mu_selection_1)
+    ].copy()
+
+
+    _sorted = _filtered.sort_values(['annual_vol', 'expected_return'], ascending=[True, False])
+
+    _pareto_list = []
+    _max_r = -1e9
+    for _, _row in _sorted.iterrows():
+        if _row['expected_return'] > _max_r:
+            _pareto_list.append(_row)
+            _max_r = _row['expected_return']
+    _pareto_df = pd.DataFrame(_pareto_list)
+
+    _points = alt.Chart(_filtered).mark_circle(size=60, opacity=0.4).encode(
+        x=alt.X('annual_vol:Q', scale=alt.Scale(zero=False)),
+        y=alt.Y('expected_return:Q', scale=alt.Scale(zero=False)),
+        color='sharpe_ratio:Q'
+    )
+
+    _line = alt.Chart(_pareto_df).mark_line(color='red', interpolate='step-after').encode(
+        x='annual_vol:Q', y='expected_return:Q'
+    )
+
+    # Return the UI component, not the local variables
+    mo.vstack([
+        mo.md(f"## 📈 Frontier (μ={mu_selection})"),
+        mo.ui.altair_chart(_points + _line)
+    ])
     return
 
 

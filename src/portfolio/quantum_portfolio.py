@@ -1,4 +1,4 @@
-from src.portfolio.portfolio_base import PorfolioBase, PortfolioResult
+from src.portfolio.portfolio_base import PortfolioBase, PortfolioResult
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Dict, List, OrderedDict, Any
@@ -28,14 +28,14 @@ class QportHyperparameterProduct:
     lambda_risk: float = 0.5
     lambda_reward: float = 0.5
     lambda_cardinality: float = 100.0
-    lambda_turnover: float = 1.0
+    lambda_turnover: float = 0
     lambda_esg: float = 1.0
     n_bits: int = 4
     mu_scalar: int = 10
     prev_weights: float | None = None
 
 
-class QuantumPortfolioComposite(PorfolioBase, ABC):
+class QuantumPortfolioComposite(PortfolioBase, ABC):
     def __init__(self, name: str, 
         proxy: FinancialContextCommand,
         symbolics: QuantumProblemModelingBuilder,
@@ -52,7 +52,7 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
             p_max=hparaproduct.p_qaoa_layers, 
             maxiter= hparaproduct.max_iterations
         )
-        self.minimizer = ModelBridgeCommand(layers_p=hparaproduct.p_qaoa_layers)
+        self.minimizer = ModelBridgeCommand(layers_p=hparaproduct.p_qaoa_layers, shots=hparaproduct.shots, maxiter=hparaproduct.max_iterations)
         self.context = self.financial_context.get_context(False, False)
         logger.info(f"Moments of mu and cov {self.context.get_moments()}")
         self.problem, self.expected_variables = self.symbolics.build()
@@ -131,7 +131,7 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
         """
         Probes the neighborhood of the optimal bitstring to measure ruggedness.
         """
-        logger.info(f"op_bitstring: {optimal_bitstring}, qubo_dict {qubo_dict}")
+        logger.info(f"op_bitstring: {optimal_bitstring}")
         if isinstance(optimal_bitstring, str):
             base_bits = [int(b) for b in optimal_bitstring if b in "01"]
         else:
@@ -162,7 +162,8 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
 
         return {
             "base_energy": base_energy,
-            "neighbor_energies": neighbor_energies,
+            "neighbor_energies": str(neighbor_energies),
+            "mean_neighborhood_energy": avg_neighbor_energy,
             "ruggedness": ruggedness_coeff
         }
     
@@ -171,7 +172,7 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
         Main entry point. 
         Supports 'analog' (Annealing) and 'gate-based' (QAOA/Warming).
         """
-        # 1. Prepare Instance Data (Shared logic)
+        # 1. Prepare Instance Data
         instance = self.symbolics.get_instance_data(
             proxy=self.context,
             k_target=self.hparaproduct.k_cardinality,
@@ -183,70 +184,61 @@ class QuantumPortfolioComposite(PorfolioBase, ABC):
             prev_weights=self.hparaproduct.prev_weights
         )
         qprod = self.instantiator.get_qubo_prod(self.problem, self.expected_variables, instance)
-        config_add = {} # Initialize as empty dict
-        
+        config_add: Dict[str, Any] = {} # Initialize as empty dict
+    
         if mode == QMethod.ANALOG_BASED:
             logger.info("Executing Analog Annealing Path...")
             result_dict = self.minimizer.minimize_analog(qprod)
             
-            # Handle the result format (assuming dict from previous logs)
-            bitstring = list(result_dict.keys())[0] 
+            # 1. Robustly get the bitstring. 
+            # Ensure it is a string of '0's and '1's
+            raw_key = list(result_dict.keys())[0]
+            if isinstance(raw_key, (list, tuple, np.ndarray)):
+                bitstring = "".join(map(str, raw_key))
+            else:
+                bitstring = str(raw_key)
+                
+            logger.info(f"Bitstring identified: {bitstring}")
 
-            # Calculate selections based on n_bits
-            selections = []
-            for i in range(len(self.context.tickers)):
-                start = i * self.hparaproduct.n_bits
-                end = (i + 1) * self.hparaproduct.n_bits
+            # 2. Calculate selections with safety slicing
+            decisions = []
+            n_assets = len(self.context.tickers)
+            n_bits = self.hparaproduct.n_bits
+            
+            for i in range(n_assets):
+                start = i * n_bits
+                end = start + n_bits
                 chunk = bitstring[start : end]
-                selections.append(int(chunk, 2))
-            
-            # PROBE LANDSCAPE: Correctly pass optimal_bitstring and qubo_dict
-            landscape_data = self.map_landscape_ruggedness(
-                optimal_bitstring=bitstring, 
-                qubo_dict=qprod.qubo_dict
-            )
-            
-            # Add landscape metrics to the config for the final report
-            config_add = {
-                "ruggedness_coeff": round(landscape_data["ruggedness"], 4),
-                "optimal_energy": round(landscape_data["base_energy"], 2)
-            }
-            
-            decisions = selectionsconfig_add = {} # Initialize as empty dict
-        
-        if mode == QMethod.ANALOG_BASED:
-            logger.info("Executing Analog Annealing Path...")
-            result_dict = self.minimizer.minimize_analog(qprod)
-            
-            # Handle the result format (assuming dict from previous logs)
-            bitstring = list(result_dict.keys())[0] 
-
-            # Calculate selections based on n_bits
-            selections = []
-            for i in range(len(self.context.tickers)):
-                start = i * self.hparaproduct.n_bits
-                end = (i + 1) * self.hparaproduct.n_bits
-                chunk = bitstring[start : end]
-                selections.append(int(chunk, 2))
-            
-            # PROBE LANDSCAPE: Correctly pass optimal_bitstring and qubo_dict
-            landscape_data = self.map_landscape_ruggedness(
-                optimal_bitstring=bitstring, 
-                qubo_dict=qprod.qubo_dict
-            )
-            
-            # Add landscape metrics to the config for the final report
-
-            
-            decisions = selections
-            config_add = self.map_landscape_ruggedness(bitstring, qprod.qubo_dict, 1)
-            logger.info(f"Decision: {decisions}")
-
+                
+                if not chunk:
+                    logger.warning(f"Empty chunk for asset {i}. Check bitstring length!")
+                    decisions.append(0)
+                    continue
+                
+                # Use [::-1] if your QUBO builder puts the least significant bit first
+                decisions.append(int(chunk, 2))
+                
+            config_add = self.map_landscape_ruggedness(bitstring, qprod.qubo_dict, 1)                
+            config_add['prob_success'] = 1.0
         else:
             logger.info("Executing Gate-based/Warming Path...")
             min_result = self.minimizer.minimize_with_warming(qprod)
             decisions = self.minimizer.sample_best_configuration(qprod, min_result)
-            logger.info(f"Decision: {decisions}")
+            bitstring = "".join(map(str, decisions)) 
+            prob_success = 0.0
+            if hasattr(min_result, 'eigenstate'):
+                prob_success = min_result.eigenstate.get(bitstring, 0.0)
+            elif hasattr(min_result, 'samples'):
+                # For shot-based results, find the sample that matches our 'decisions'
+                for sample in min_result.samples():
+                    if "".join(map(str, sample.configuration)) == bitstring:
+                        prob_success = sample.probability
+                        break
+            
+            config_add = self.map_landscape_ruggedness(bitstring, qprod.qubo_dict, 1)
+            config_add['prob_success'] = prob_success
+            
+        logger.info(f"Decision: {decisions}")
         selections = self.symbolics.decode_results(decisions)
         
         # 4. Finalize (Calculates Return, Vol, Sharpe)
@@ -281,8 +273,7 @@ class QPortRiskRewardCardinalityTurnover(QuantumPortfolioComposite):
             ).add_strategy_list([
             RewardMuIntegerStrategy(),
             RiskCovarianceIntegerStrategy(),
-            CardinalityBinaryStrategy(),
-            TransactionCostStrategy()
+            CardinalityBinaryStrategy()
         ])
         super().__init__(name, proxy, symbolics, hparaproduct)
         

@@ -33,7 +33,7 @@ class GateBasedQuantumEngine:
             if strategy == BackendStrategy.GPU:
                 logger.info(f"Attempting GPU initialization (matrix_product_state)...")
                 sim = AerSimulator(
-                    method='matrix_product_state',#statevector or matrix_product_state
+                    method='statevector',#statevector or matrix_product_state
                     device='GPU',
                     seed_simulator=self.seed,
                     batched_shots_gpu=True,

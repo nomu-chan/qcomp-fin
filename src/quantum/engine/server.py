@@ -13,7 +13,7 @@ app = FastAPI()
 # --- INITIALIZE YOUR ENGINE ONCE ---
 # This triggers your _initialize_backend(GPU) logic immediately on startup
 digital_engine = GateBasedQuantumEngine(strategy=BackendStrategy.GPU)
-analog_engine = AnalogQuantumEngine(annealing_strategy=AnnealingStrategy.BIFURCATION)
+analog_engine = AnalogQuantumEngine(annealing_strategy=AnnealingStrategy.CLASSICAL)
 
 def map_to_qasm_names(binding: dict) -> dict:
     mapped = {}
@@ -59,7 +59,9 @@ async def execute(manifest: dict):
             
             # 4. Run the entire batch in ONE GPU call
             # Aer handles the internal parallelization across CUDA cores
+            
             job = digital_engine.backend.run(bound_circuits, shots=shots)
+            logger.info(f"Digital Engine Job: {job}")
             result = job.result()
             counts = result.get_counts()
 

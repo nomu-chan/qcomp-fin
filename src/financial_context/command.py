@@ -28,6 +28,7 @@ class FinancialContextCommand:
             prices_df.to_csv(self.price_path)
         else:
             prices_df = pd.read_csv(self.price_path, index_col=0, parse_dates=True)
+        prices_df = prices_df[self.tickers]
 
         # 2. Handle ESG
         if not self.esg_path.exists() or update_esg:

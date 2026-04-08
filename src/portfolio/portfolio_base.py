@@ -63,7 +63,7 @@ class QMethod(Enum):
     GATE_BASED = auto()
     ANALOG_BASED = auto()
 
-class PorfolioBase(ABC):
+class PortfolioBase(ABC):
     def __init__(self, name: str, financial_context: FinancialContextCommand) -> None:
         self.name = name
         self.financial_context = financial_context

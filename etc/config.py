@@ -16,22 +16,17 @@ class ProjectConfig:
 
 # 16 default tickers from the S&P 500, representing a mix of tech and other sectors.
 DEFAULT_TICKERS = [
-    "AAPL", # Apple Inc.
-    "MSFT", # Microsoft
-    "NVDA", # NVIDIA
-    "GOOGL", # Google
-    "AMZN", # Amazon
-    "META", # Meta
-    "ADBE", # Adobe
-    "CRM", # Salesforce
-    "ORCL", # Oracle
-    "INTC", # Intel
-    "JPM", 
-    "GS",
-    "XOM", 
-    "CVX",
-    "GLD", 
-    "TLT"
+    # --- TIER 1: The "Small" Core (N=4) ---
+    # 1 Tech, 1 Finance, 1 Energy, 1 Safe Haven
+    "AAPL", "JPM", "XOM", "GLD", 
+
+    # --- TIER 2: The "Medium" Expansion (N=8) ---
+    # Adds Cloud/Software, Investment Banking, Oil Major, and Treasuries
+    "MSFT", "GS", "CVX", "TLT",
+
+    # --- TIER 3: The "Large" Full Market (N=16) ---
+    # Fills in the remaining high-volatility Tech and Semi-conductors
+    "NVDA", "GOOGL", "AMZN", "META", "ADBE", "CRM", "ORCL", "INTC"
 ]
 
 DEFAULT_PROJECT_CONFIG = ProjectConfig(tickers=DEFAULT_TICKERS)

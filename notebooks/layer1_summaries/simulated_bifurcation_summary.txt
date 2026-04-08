@@ -1,0 +1,29 @@
+SUMMARY REPORT: Layer 1 Problem Characterization
+Target Solver: Simulated Bifurcation
+==================================================
+
+--- DATASET SCALE ---
+Total Problem Instances: 217
+Range of N (Assets): 4 - 8
+Range of Bit Depth: 1 - 3
+
+--- LANDSCAPE RUGGEDNESS ---
+Mean Ruggedness: 0.2885
+Max Ruggedness: 12.2176
+Ruggedness Std Dev: 1.0117
+Correlation (Lambda_Risk vs Ruggedness): 0.2750
+
+--- CONSTRAINT DYNAMICS ---
+Mean K/N Ratio (Tightness): 0.4378
+Mean Active Assets in Ground State: 2.60
+
+--- PARAMETER CORRELATIONS ---
+               n_assets    n_bits  lambda_risk  lambda_reward  ruggedness
+n_assets       1.000000  0.067729     0.007805      -0.005394    0.035547
+n_bits         0.067729  1.000000     0.115240      -0.079644    0.804118
+lambda_risk    0.007805  0.115240     1.000000      -0.009178    0.275007
+lambda_reward -0.005394 -0.079644    -0.009178       1.000000   -0.072818
+ruggedness     0.035547  0.804118     0.275007      -0.072818    1.000000
+
+==================================================
+End of Report

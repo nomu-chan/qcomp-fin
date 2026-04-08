@@ -104,9 +104,6 @@ class ModelBridgeCommand:
             shots=self.shots
         )
 
-
-        
-        # Convert string '0101' to [0, 1, 0, 1]
         return final_counts
     
     def minimize_analog(self, product: QUBOProduct, is_using_cache=True):

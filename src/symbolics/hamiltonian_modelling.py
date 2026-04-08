@@ -72,6 +72,7 @@ class QuantumProblemModelingBuilder(ABC):
             HamiltonianPlaceholders.N_INTEGER_BITS: n_bits,
             HamiltonianPlaceholders.PREV_X: prev_weights,
             HamiltonianPlaceholders.LAMBDA_TURNOVER: lambda_turnover,
+            
         }
         logger.info("Instance Data:")
         logger.info(instance_data)

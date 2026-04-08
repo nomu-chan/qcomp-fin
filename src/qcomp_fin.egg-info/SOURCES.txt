@@ -16,6 +16,7 @@ src/quantum/__init__.py
 src/quantum/engine/__init__.py
 src/quantum/engine/analog_engine.py
 src/quantum/engine/digital_engine.py
+src/quantum/engine/dirty_test.py
 src/quantum/engine/entrypoint.py
 src/quantum/engine/logging_mod.py
 src/quantum/engine/server.py
@@ -29,6 +30,7 @@ src/utils/__init__.py
 src/utils/cache.py
 src/utils/job_manifest.py
 src/utils/logging_mod.py
+tests/test_bifurcation.py
 tests/test_minimizer.py
 tests/test_pipeline.py
 tests/test_portfolio_formulation.py

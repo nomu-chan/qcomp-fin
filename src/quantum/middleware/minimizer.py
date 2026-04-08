@@ -40,7 +40,7 @@ class QuantumEngineCommand:
         
         return response["results"] # Returns the best bitstring
 
-    def run_server(self, run_type: str, payload: str, **kwargs):
+    def run_server(self, run_type: str, payload: str, **kwargs) -> Union[Dict[str, Any], list[Dict[str, int]]]:
         manifest = {
             "type": run_type,
             "payload": payload,

@@ -1,0 +1,29 @@
+SUMMARY REPORT: Layer 1 Problem Characterization
+Target Solver: Gatebased QAOA
+==================================================
+
+--- DATASET SCALE ---
+Total Problem Instances: 648
+Range of N (Assets): 4 - 8
+Range of Bit Depth: 1 - 3
+
+--- LANDSCAPE RUGGEDNESS ---
+Mean Ruggedness: 0.1612
+Max Ruggedness: 27.2395
+Ruggedness Std Dev: 1.1695
+Correlation (Lambda_Risk vs Ruggedness): -0.0290
+
+--- CONSTRAINT DYNAMICS ---
+Mean K/N Ratio (Tightness): 0.4375
+Mean Active Assets in Ground State: 4.24
+
+--- PARAMETER CORRELATIONS ---
+                   n_assets        n_bits   lambda_risk  lambda_reward  ruggedness
+n_assets       1.000000e+00  3.495875e-16  5.069397e-17  -1.760872e-16   -0.065468
+n_bits         3.495875e-16  1.000000e+00  1.126133e-16  -3.342075e-16   -0.114429
+lambda_risk    5.069397e-17  1.126133e-16  1.000000e+00  -1.397776e-16   -0.028950
+lambda_reward -1.760872e-16 -3.342075e-16 -1.397776e-16   1.000000e+00   -0.053629
+ruggedness    -6.546795e-02 -1.144289e-01 -2.895026e-02  -5.362879e-02    1.000000
+
+==================================================
+End of Report

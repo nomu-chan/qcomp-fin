@@ -24,6 +24,7 @@ class HamiltonianPlaceholders:
     CARD_LIMIT = "cardinality_limit"
     MAX_UNITS = "max_units"
     PREV_X = "x_previous"
+    TURNOVER_X = "turnover"
     
     # Force Strengths
     LAMBDA_RISK = "lambda_risk"
@@ -199,4 +200,4 @@ class TransactionCostStrategy(HamiltonianStrategy):
         
         placeholders = [HamiltonianPlaceholders.PREV_X, HamiltonianPlaceholders.LAMBDA_TURNOVER]
         
-        return StrategyOutput(turnover_expr, placeholders), problem
+        return StrategyOutput(turnover_expr, [HamiltonianPlaceholders.TURNOVER_X]), problem

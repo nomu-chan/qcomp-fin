@@ -43,11 +43,13 @@ class InstantiatorCommand:
         """
         Filters and Validates data to match the strict Jijmodeling schema.
         """
-        # 1. SCRUBBING: Remove any keys that the math doesn't know about
-        # This removes 'max_units' and 'esg' if they aren't in expected_data
+        # Define structural keys that MUST affect the hash
+        structural_metadata = ["n_bits", "n_assets", "k_cardinality"]
+        
+        # Keep math-required keys OR structural keys
         filtered_data = {
             key: value for key, value in instance_data.items() 
-            if key in expected_data
+            if key in expected_data or key in structural_metadata
         }
 
         # 2. INJECTION: Add neutral defaults for expected keys that are missing
@@ -71,9 +73,12 @@ class InstantiatorCommand:
 
         try:
             # 3. EVALUATE: Use the scrubbed 'filtered_data' instead of 'instance_data'
-            instance = problem.eval(filtered_data)
+            eval_data = {k: v for k, v in filtered_data.items() if k in expected_data}
+            instance = problem.eval(eval_data)
             
             qubo_dict, q_const = instance.to_qubo()
+            
+            # Use the FULL filtered_data (including n_bits) for the hash
             data_hash = generate_identifier(filtered_data)
             
             logger.info(f"✅ QUBO Compiled Successfully. Hash: {data_hash}")
