@@ -200,6 +200,70 @@ ruggedness     0.035547  0.804118     0.275007      -0.072818    1.000000
 End of Report
 ----------------------------------------
 
+--- SOURCE: classical_milp_discrete_baseline_summary.txt ---
+SUMMARY REPORT: Layer 1 Problem Characterization
+Target Solver: Classical MILP Discrete Baseline
+==================================================
+
+--- DATASET SCALE ---
+Total Problem Instances: 648
+Range of N (Assets): 4 - 8
+Range of Bit Depth: 1 - 3
+
+--- LANDSCAPE RUGGEDNESS ---
+Mean Ruggedness: 0.7981
+Max Ruggedness: 9.1812
+Ruggedness Std Dev: 1.4258
+Correlation (Lambda_Risk vs Ruggedness): 0.0831
+
+--- CONSTRAINT DYNAMICS ---
+Mean K/N Ratio (Tightness): 0.4375
+Mean Active Assets in Ground State: 1.97
+
+--- PARAMETER CORRELATIONS ---
+                   n_assets        n_bits   lambda_risk  lambda_reward  ruggedness
+n_assets       1.000000e+00  3.495875e-16  5.069397e-17  -1.760872e-16    0.008627
+n_bits         3.495875e-16  1.000000e+00  1.126133e-16  -3.342075e-16    0.515883
+lambda_risk    5.069397e-17  1.126133e-16  1.000000e+00  -1.397776e-16    0.083065
+lambda_reward -1.760872e-16 -3.342075e-16 -1.397776e-16   1.000000e+00   -0.166327
+ruggedness     8.626938e-03  5.158833e-01  8.306503e-02  -1.663267e-01    1.000000
+
+==================================================
+End of Report
+----------------------------------------
+
+--- SOURCE: classical_greedysearch_discrete_baseline_summary.txt ---
+SUMMARY REPORT: Layer 1 Problem Characterization
+Target Solver: Classical GreedySearch Discrete Baseline
+==================================================
+
+--- DATASET SCALE ---
+Total Problem Instances: 393
+Range of N (Assets): 4 - 8
+Range of Bit Depth: 1 - 3
+
+--- LANDSCAPE RUGGEDNESS ---
+Mean Ruggedness: 2.7315
+Max Ruggedness: 236.4831
+Ruggedness Std Dev: 16.6124
+Correlation (Lambda_Risk vs Ruggedness): 0.1020
+
+--- CONSTRAINT DYNAMICS ---
+Mean K/N Ratio (Tightness): 0.4389
+Mean Active Assets in Ground State: 2.67
+
+--- PARAMETER CORRELATIONS ---
+                   n_assets        n_bits   lambda_risk  lambda_reward  ruggedness
+n_assets       1.000000e+00  4.224659e-16 -7.675140e-03  -1.978156e-03   -0.052206
+n_bits         4.224659e-16  1.000000e+00  1.275962e-16  -3.527235e-16    0.139113
+lambda_risk   -7.675140e-03  1.275962e-16  1.000000e+00  -1.702430e-01    0.101994
+lambda_reward -1.978156e-03 -3.527235e-16 -1.702430e-01   1.000000e+00   -0.025560
+ruggedness    -5.220613e-02  1.391126e-01  1.019940e-01  -2.556033e-02    1.000000
+
+==================================================
+End of Report
+----------------------------------------
+
 
 
 ######################################
@@ -211,7 +275,7 @@ LAYER 2 REPORT: Solver Outcome & Statistical Fidelity
 ======================================================================
 
 --- SECTION 1: TOPOLOGICAL PERCEPTION (Kruskal-Wallis) ---
-H-Statistic: 2088.4380
+H-Statistic: 2338.8160
 p-value:     0.0000e+00
 Finding:     STATISTICALLY SIGNIFICANT DIVERGENCE
 Note: High H-stat confirms that solver paradigms perceive unique ruggedness
@@ -221,7 +285,8 @@ profiles for identical problem instances.
 Method                    | Med Sharpe | Mean K-Err | Spearman Rho
 ----------------------------------------------------------------------
 Ideal Baseline            | 1.6211     | 1.6599     | nan
-Discrete Baseline         | 1.5106     | 1.4427     | -0.5776
+Greedy S. Discrete        | 1.5106     | 1.4427     | -0.5776
+MILP Discrete             | 1.2168     | 0.6667     | -0.2959
 Sim. Bifurcation          | 1.2295     | 0.7143     | -0.2961
 Quantum Annealing         | 1.2003     | 0.7922     | -0.2520
 Classical Annealing       | 1.1988     | 0.7886     | -0.2535
@@ -231,7 +296,8 @@ Gate-based QAOA           | 0.9658     | 2.3678     | 0.0243
 Method                    | Avg Time (s) | Max Time (s)
 ------------------------------------------------------------
 Ideal Baseline            | 0.01532      | 0.02252
-Discrete Baseline         | 0.01478      | 0.07854
+Greedy S. Discrete        | 0.01478      | 0.07854
+MILP Discrete             | 0.03592      | 0.24492
 Sim. Bifurcation          | 0.30624      | 0.62869
 Quantum Annealing         | 6.00056      | 9.78374
 Classical Annealing       | 0.12271      | 0.16068
@@ -252,49 +318,63 @@ LAYER 3: REGIME & OPERATIONAL CROSSOVER REPORT
 Metric: Advantage Floor (95% LCB - Baseline Median)
 ===========================================================================
 
---- SOLVER: Sim. Bifurcation ---
+--- SOLVER: Greedy S. Discrete ---
 STATUS: Operational Crossover REACHED
-EARLIEST TRANSITION: Decile 4.0 at N=4.0
-MAXIMUM ADVANTAGE: +0.0206
+EARLIEST TRANSITION: Decile 4.0 at N=8.0
+MAXIMUM ADVANTAGE: +0.4901
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0   1         2   3         4         5         6         7         8
-n                                                                                   
-4      -1.176375 NaN -0.146616 NaN  0.020646 -0.198712 -0.218100 -0.223487 -0.556156
-8      -1.080442 NaN       NaN NaN -0.034745 -0.299459 -0.495214 -0.164816 -0.600260
+decile         4         5         6         7         8
+n                                                       
+4      -0.252107  0.108782  0.297263  0.194596  0.424717
+8       0.036074  0.138824  0.311715  0.244551  0.490126
+---------------------------------------------------------------------------
+
+--- SOLVER: Sim. Bifurcation ---
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.0964
+
+Detailed Advantage Floor (LCB - Baseline Median):
+decile         0         1         2         3         4         5         6         7         8
+n                                                                                               
+4      -1.227162 -0.160718 -0.216340 -0.400397 -0.114397 -0.027525  0.096350 -0.075576       NaN
+8      -1.276802       NaN -0.144415 -0.137605 -0.146434 -0.116490 -0.034177 -0.028404 -0.079838
 ---------------------------------------------------------------------------
 
 --- SOLVER: Quantum Annealing ---
-STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.0113
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.1197
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.126341       NaN -0.011267 NaN -0.014058 -0.235318 -0.227984 -0.064152 -0.514067
-8      -1.109471 -0.205834       NaN NaN -0.135937 -0.452682 -0.458863 -0.136338 -0.518672
+decile         0        1         2         3         4         5         6         7         8
+n                                                                                              
+4      -1.239429 -0.21634 -0.146496 -0.312985 -0.197637 -0.030995  0.119733  0.034429 -0.051466
+8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.141102 -0.049797  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
 --- SOLVER: Classical Annealing ---
-STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.0113
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.1111
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.126341       NaN -0.011267 NaN -0.014058 -0.236908 -0.227984 -0.072441 -0.514067
-8      -1.109471 -0.205834       NaN NaN -0.135937 -0.457686 -0.471220 -0.136338 -0.518672
+decile         0        1         2         3         4         5         6         7         8
+n                                                                                              
+4      -1.239429 -0.21634 -0.146496 -0.312985 -0.195333 -0.035234  0.111125  0.034429 -0.051466
+8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.145314 -0.061663  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
 --- SOLVER: Gate-based QAOA ---
 STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.1815
+CLOSEST APPROACH: -0.1614
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.124919       NaN -0.181494 NaN -0.194361 -0.412392 -0.511601 -0.285617 -0.706642
-8      -0.248164 -0.294164       NaN NaN -0.461960 -0.770727 -0.791874 -0.529253 -0.905247
+decile         0         1         2         3         4         5         6         7         8
+n                                                                                               
+4      -1.246091 -0.307702 -0.345133 -0.489300 -0.376521 -0.247606 -0.161416 -0.165522 -0.256793
+8      -0.453803 -0.445317 -0.481157 -0.522174 -0.611269 -0.471939 -0.365330 -0.398071 -0.397506
 ---------------------------------------------------------------------------
 
 End of Layer 3 Report
@@ -314,46 +394,49 @@ LAYER 4: RIGOROUS STATISTICAL VALIDATION
 --- 1. INTERACTION REGRESSION SUMMARY ---
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:           sharpe_ratio   R-squared:                       0.409
-Model:                            OLS   Adj. R-squared:                  0.407
-Method:                 Least Squares   F-statistic:                     182.8
-Date:                Wed, 08 Apr 2026   Prob (F-statistic):               0.00
-Time:                        19:52:39   Log-Likelihood:                -500.62
-No. Observations:                4236   AIC:                             1035.
-Df Residuals:                    4219   BIC:                             1143.
-Df Model:                          16                                         
+Dep. Variable:           sharpe_ratio   R-squared:                       0.416
+Model:                            OLS   Adj. R-squared:                  0.414
+Method:                 Least Squares   F-statistic:                     182.3
+Date:                Sun, 12 Apr 2026   Prob (F-statistic):               0.00
+Time:                        21:19:34   Log-Likelihood:                -378.47
+No. Observations:                4884   AIC:                             796.9
+Df Residuals:                    4864   BIC:                             926.8
+Df Model:                          19                                         
 Covariance Type:            nonrobust                                         
-====================================================================================================================
-                                                       coef    std err          t      P>|t|      [0.025      0.975]
---------------------------------------------------------------------------------------------------------------------
-Intercept                                            1.2176      0.035     35.166      0.000       1.150       1.285
-method_clean[T.Discrete_Baseline]                    0.0459      0.059      0.784      0.433      -0.069       0.161
-method_clean[T.Gate_based_QAOA]                     -0.3011      0.040     -7.538      0.000      -0.379      -0.223
-method_clean[T.Ideal_Baseline]                       0.3069      0.056      5.518      0.000       0.198       0.416
-method_clean[T.Quantum_Annealing]                    0.0004      0.049      0.007      0.994      -0.096       0.097
-method_clean[T.Sim__Bifurcation]                    -0.0104      0.069     -0.150      0.881      -0.146       0.125
-log_ruggedness                                      -0.0095      0.018     -0.541      0.589      -0.044       0.025
-method_clean[T.Discrete_Baseline]:log_ruggedness     0.1075      0.028      3.836      0.000       0.053       0.162
-method_clean[T.Gate_based_QAOA]:log_ruggedness       0.0107      0.031      0.352      0.725      -0.049       0.071
-method_clean[T.Ideal_Baseline]:log_ruggedness     -8.39e-17   5.93e-17     -1.414      0.157      -2e-16    3.24e-17
-method_clean[T.Quantum_Annealing]:log_ruggedness    -0.0004      0.025     -0.018      0.986      -0.049       0.048
-method_clean[T.Sim__Bifurcation]:log_ruggedness     -0.0547      0.065     -0.843      0.399      -0.182       0.073
-n_assets                                            -0.0182      0.005     -3.392      0.001      -0.029      -0.008
-method_clean[T.Discrete_Baseline]:n_assets           0.0315      0.009      3.611      0.000       0.014       0.049
-method_clean[T.Gate_based_QAOA]:n_assets             0.0153      0.006      2.461      0.014       0.003       0.027
-method_clean[T.Ideal_Baseline]:n_assets              0.0303      0.009      3.471      0.001       0.013       0.047
-method_clean[T.Quantum_Annealing]:n_assets           0.0002      0.008      0.026      0.979      -0.015       0.015
-method_clean[T.Sim__Bifurcation]:n_assets            0.0095      0.011      0.883      0.377      -0.012       0.030
+=====================================================================================================================
+                                                        coef    std err          t      P>|t|      [0.025      0.975]
+---------------------------------------------------------------------------------------------------------------------
+Intercept                                             1.2176      0.033     36.625      0.000       1.152       1.283
+method_clean[T.Gate_based_QAOA]                      -0.3011      0.038     -7.850      0.000      -0.376      -0.226
+method_clean[T.Greedy_S__Discrete]                    0.0459      0.056      0.817      0.414      -0.064       0.156
+method_clean[T.Ideal_Baseline]                        0.3069      0.053      5.747      0.000       0.202       0.412
+method_clean[T.MILP_Discrete]                         0.1133      0.047      2.399      0.016       0.021       0.206
+method_clean[T.Quantum_Annealing]                     0.0004      0.047      0.008      0.994      -0.092       0.093
+method_clean[T.Sim__Bifurcation]                     -0.0104      0.066     -0.157      0.876      -0.140       0.120
+log_ruggedness                                       -0.0095      0.017     -0.563      0.573      -0.043       0.024
+method_clean[T.Gate_based_QAOA]:log_ruggedness        0.0107      0.029      0.367      0.714      -0.047       0.068
+method_clean[T.Greedy_S__Discrete]:log_ruggedness     0.1075      0.027      3.996      0.000       0.055       0.160
+method_clean[T.Ideal_Baseline]:log_ruggedness     -1.991e-17   5.52e-17     -0.361      0.718   -1.28e-16    8.82e-17
+method_clean[T.MILP_Discrete]:log_ruggedness         -0.1207      0.027     -4.534      0.000      -0.173      -0.069
+method_clean[T.Quantum_Annealing]:log_ruggedness     -0.0004      0.024     -0.018      0.985      -0.047       0.046
+method_clean[T.Sim__Bifurcation]:log_ruggedness      -0.0547      0.062     -0.878      0.380      -0.177       0.068
+n_assets                                             -0.0182      0.005     -3.532      0.000      -0.028      -0.008
+method_clean[T.Gate_based_QAOA]:n_assets              0.0153      0.006      2.563      0.010       0.004       0.027
+method_clean[T.Greedy_S__Discrete]:n_assets           0.0315      0.008      3.761      0.000       0.015       0.048
+method_clean[T.Ideal_Baseline]:n_assets               0.0303      0.008      3.615      0.000       0.014       0.047
+method_clean[T.MILP_Discrete]:n_assets                0.0158      0.007      2.172      0.030       0.002       0.030
+method_clean[T.Quantum_Annealing]:n_assets            0.0002      0.007      0.027      0.979      -0.014       0.015
+method_clean[T.Sim__Bifurcation]:n_assets             0.0095      0.010      0.920      0.358      -0.011       0.030
 ==============================================================================
-Omnibus:                     1750.605   Durbin-Watson:                   1.152
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):             8098.834
-Skew:                          -1.985   Prob(JB):                         0.00
-Kurtosis:                       8.488   Cond. No.                     6.11e+17
+Omnibus:                     1992.815   Durbin-Watson:                   1.152
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):             9687.476
+Skew:                          -1.936   Prob(JB):                         0.00
+Kurtosis:                       8.710   Cond. No.                     4.76e+17
 ==============================================================================
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-[2] The smallest eigenvalue is 5.99e-31. This might indicate that there are
+[2] The smallest eigenvalue is 1.09e-30. This might indicate that there are
 strong multicollinearity problems or that the design matrix is singular.
 
 --- 2. PAIRED WILCOXON TESTS (vs. Baseline) ---
@@ -361,20 +444,22 @@ No paired data available for testing.
 
 --- 3. BOOTSTRAP 95% CONFIDENCE INTERVALS ---
              method  Sharpe_Mean_LCB  Sharpe_Mean_UCB
-     Ideal Baseline         1.594509         1.599533
-  Discrete Baseline         1.395746         1.427613
-   Sim. Bifurcation         1.104872         1.176710
-  Quantum Annealing         1.081740         1.128767
-Classical Annealing         1.079724         1.127585
-    Gate-based QAOA         0.885249         0.911877
+     Ideal Baseline         1.594876         1.599288
+ Greedy S. Discrete         1.395317         1.427871
+      MILP Discrete         1.248147         1.276223
+   Sim. Bifurcation         1.101244         1.180122
+  Quantum Annealing         1.081030         1.127511
+Classical Annealing         1.082686         1.128754
+    Gate-based QAOA         0.885441         0.911515
 
 --- 4. ALGORITHMIC SCALING EXPONENTS ---
              method  exponent
      Ideal Baseline  0.016357
-  Discrete Baseline  0.033157
+ Greedy S. Discrete  0.033157
 Classical Annealing  0.165763
    Sim. Bifurcation  0.182535
   Quantum Annealing  0.237330
+      MILP Discrete  0.676775
     Gate-based QAOA  1.886751
 
 --- END OF REPORT ---

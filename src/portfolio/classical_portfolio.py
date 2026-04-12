@@ -9,7 +9,7 @@ from src.financial_context.command import FinancialContextCommand
 from src.portfolio.quantum_portfolio import QportHyperparameterProduct
 from pypfopt import DiscreteAllocation
 import numpy as np
-
+import gurobipy as gp
 logger = logging.getLogger(__name__)
 
 class ClassicalPortfoilioBase(PortfolioBase):
@@ -261,7 +261,7 @@ class DiscretePortfolio(ClassicalPortfoilioBase):
         da = DiscreteAllocation(
             raw_weights, 
             latest_prices=prices_series, 
-            total_portfolio_value=total_units
+            total_portfolio_value=total_units # type: ignore
         )
 
         # This is usually where the 'divide' ufunc error happens 
@@ -284,4 +284,156 @@ class DiscretePortfolio(ClassicalPortfoilioBase):
             volatility=volatility,
             sharpe_ratio=sharpe_ratio,
             config=config
+        )
+        
+        
+class DiscreteMILPPortfolio(ClassicalPortfoilioBase):
+    def __init__(self, name: str, financial_context: FinancialContextCommand, hparams: QportHyperparameterProduct):
+        super().__init__(name, financial_context, hparams)
+
+    def weights_to_bitstring(self, weights: OrderedDict) -> list[int]:
+        n_bits = self.hparams.n_bits
+        total_units = (2**n_bits) - 1
+        bitstring = []
+        for ticker, weight in weights.items():
+            units = int(round(weight * total_units))
+            # Format to binary, reverse so index 0 is least significant bit
+            binary_str = format(units, f'0{n_bits}b')[::-1] 
+            bitstring.extend([int(b) for b in binary_str])
+        return bitstring
+    
+    def _calculate_energy(self, bitstring: list[int], qubo_dict: dict) -> float:
+        energy = 0.0
+        for (i, j), coeff in qubo_dict.items():
+            if bitstring[i] == 1 and bitstring[j] == 1:
+                energy += coeff
+        return energy
+
+    def map_landscape_ruggedness(self, optimal_bitstring, qubo_dict: dict) -> Dict[str, Any]:
+        if isinstance(optimal_bitstring, str):
+            base_bits = [int(b) for b in optimal_bitstring if b in "01"]
+        else:
+            base_bits = list(optimal_bitstring)
+
+        base_energy = self._calculate_energy(base_bits, qubo_dict)
+        neighbor_energies = []
+        n_vars = len(base_bits)
+
+        for i in range(n_vars):
+            neighbor = base_bits[:]
+            neighbor[i] = 1 - neighbor[i] 
+            neighbor_energies.append(self._calculate_energy(neighbor, qubo_dict))
+
+        avg_neighbor_energy = np.mean(neighbor_energies)
+        energy_std = np.std(neighbor_energies)
+        ruggedness_coeff = energy_std / abs(base_energy) if base_energy != 0 else 0
+
+        return {
+            "base_energy": base_energy,
+            "neighbor_energies": str(neighbor_energies),
+            "mean_neighborhood_energy": avg_neighbor_energy,
+            "ruggedness": ruggedness_coeff
+        }
+        
+    def build_qubo(self):
+        context = self.financial_context.get_context()
+        mu, sigma = context.get_moments(False, False)
+        n_assets = len(context.tickers)
+        n_bits = self.hparams.n_bits
+        unit_values = [2**k for k in range(n_bits)]
+        
+        qubo = {}
+        # 1. RISK & REWARD
+        for i in range(n_assets):
+            for k in range(n_bits):
+                idx_ik = i * n_bits + k
+                # Linear: -Reward + Risk Self-Interaction
+                reward_term = -self.hparams.lambda_reward * mu[i] * unit_values[k]
+                risk_self = self.hparams.lambda_risk * sigma[i, i] * (unit_values[k]**2)
+                qubo[(idx_ik, idx_ik)] = qubo.get((idx_ik, idx_ik), 0) + reward_term + risk_self
+
+                for j in range(n_assets):
+                    for m in range(n_bits):
+                        idx_jm = j * n_bits + m
+                        if idx_ik < idx_jm:
+                            # Cross-Asset Risk: 2 * lambda * sigma * bit_i * bit_j
+                            risk_interaction = 2 * self.hparams.lambda_risk * sigma[i, j] * unit_values[k] * unit_values[m]
+                            qubo[(idx_ik, idx_jm)] = qubo.get((idx_ik, idx_jm), 0) + risk_interaction
+
+        # 2. CARDINALITY (Quadratic Expansion)
+        if self.hparams.lambda_cardinality > 0:
+            K = self.hparams.k_cardinality
+            L = self.hparams.lambda_cardinality
+            # (sum(w_i) - K)^2 = sum(w_i^2) + 2*sum(w_i*w_j) - 2K*sum(w_i) + K^2
+            for i in range(n_assets):
+                for k in range(n_bits):
+                    idx_ik = i * n_bits + k
+                    # Linear: L * (2^k^2 - 2 * K * 2^k)
+                    qubo[(idx_ik, idx_ik)] += L * (unit_values[k]**2 - 2 * K * unit_values[k])
+                    for j in range(n_assets):
+                        for m in range(n_bits):
+                            idx_jm = j * n_bits + m
+                            if idx_ik < idx_jm:
+                                # Quadratic: 2 * L * 2^k * 2^m
+                                qubo[(idx_ik, idx_jm)] += 2 * L * unit_values[k] * unit_values[m]
+        return qubo
+    def solve_exact_gurobi(self, qubo_dict, n_vars):
+        model = gp.Model("Exact_MIQP")
+        model.setParam('OutputFlag', 0)
+        x = model.addVars(n_vars, vtype=gp.GRB.BINARY, name="x")
+        
+        obj = gp.QuadExpr()
+        # FIX for reportAttributeAccessIssue: Ensure we call .items() on the argument
+        # previously you might have been accidentally referencing 'self' or the class
+        for (i, j), coeff in qubo_dict.items():
+            obj += coeff * x[i] * x[j]
+        
+        model.setObjective(obj, gp.GRB.MINIMIZE)
+        model.optimize()
+        
+        # Access the solution (X attribute)
+        return [int(x[i].X) for i in range(n_vars)]
+    
+    def run(self) -> PortfolioResult:
+        context = self.financial_context.get_context()
+        mu, sigma = context.get_moments(False, False)
+        n_assets = len(context.tickers)
+        n_bits = self.hparams.n_bits
+        
+        qubo_dict = self.build_qubo()
+        total_bits = n_assets * n_bits
+
+        # FIX for reportCallIssue: Ensure internal methods are called via 'self'
+        optimal_bitstring = self.solve_exact_gurobi(qubo_dict, total_bits)
+
+        # Decode weights
+        decoded_weights = OrderedDict()
+        scaling = float((2**n_bits) - 1)
+        for i, ticker in enumerate(context.tickers):
+            bits = optimal_bitstring[i*n_bits : (i+1)*n_bits]
+            units = sum(b * (2**k) for k, b in enumerate(bits))
+            decoded_weights[ticker] = units / scaling
+
+        # Normalized Performance
+        w_arr = np.array(list(decoded_weights.values()))
+        if np.sum(w_arr) > 0:
+            w_arr = w_arr / np.sum(w_arr)
+            
+        exp_ret = np.dot(w_arr, mu)
+        vol = np.sqrt(np.dot(w_arr.T, np.dot(sigma, w_arr)))
+        
+        # Ensure this call also has its required arguments (optimal_bitstring, qubo_dict)
+        landscape_stats = self.map_landscape_ruggedness(optimal_bitstring, qubo_dict)
+
+        return PortfolioResult(
+            method_name=self.name,
+            weights=decoded_weights,
+            expected_return=exp_ret,
+            volatility=vol,
+            sharpe_ratio=exp_ret / vol if vol > 0 else 0,
+            config=OrderedDict({
+                "ruggedness": landscape_stats["ruggedness"],
+                "base_energy": landscape_stats["base_energy"],
+                "n_bits": n_bits
+            })
         )
