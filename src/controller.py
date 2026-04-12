@@ -3,7 +3,7 @@ from src.portfolio.quantum_portfolio import QPortRiskRewardCardinality, QportHyp
 from src.portfolio.portfolio_base import PortfolioResult
 from src.utils.logging_mod import get_logging
 from etc.config import DEFAULT_PROJECT_CONFIG, DATAPATH
-from src.portfolio.classical_portfolio import IdealClassicalPortfolio, DiscretePortfolio
+from src.portfolio.classical_portfolio import IdealClassicalPortfolio, DiscretePortfolio, DiscreteMILPPortfolio
 import os
 import pandas as pd
 import time
@@ -356,7 +356,6 @@ def automated_quantum_grid_search():
 
     logger.info(f"🏁 Grid Search Complete.")
 
-
 def automated_quantumannealing_grid_search():
     csv_filename = DATAPATH / 'classicalannealing_grid_search_results.csv'
     checkpoint_file = DATAPATH / 'grid_classicalannealing_search_checkpoint.json'
@@ -512,7 +511,135 @@ def automated_quantumannealing_grid_search():
             continue
 
     logger.info(f"🏁 Grid Search Complete.")
+
+def automated_classicalMILP_grid_search():
+    # Use consistent naming for the baseline artifact
+    csv_filename = DATAPATH / 'gridsearch_classical_milp.csv'
+    checkpoint_file = DATAPATH / 'grid_classical_milp_checkpoint.json'
     
+    # EXACT 1:1 space mapping to solve the "Fairness" and "Benchmark Quality" issues
+    space = {
+        'l_risk': [0.1, 0.5, 1.0, 5.0],
+        'l_reward': [1, 5, 10],
+        'l_card': [0.5, 1, 10],
+        'k_target': [1, 2, 4],
+        'mu_scalar': [1],
+        'n_assets': [4, 8],
+        'n_bits' : [1, 2, 3], 
+        'algo': [('CLASSICAL_MILP', 0)]
+    }
+    
+    keys = space.keys()
+    iterations = list(itertools.product(*space.values()))
+    total_runs = len(iterations)
+
+    start_index = 0
+    if os.path.exists(checkpoint_file):
+        with open(checkpoint_file, 'r') as f:
+            start_index = json.load(f).get("last_completed_index", -1) + 1
+        logger.info(f"🔄 Resuming Classical MILP Baseline from {start_index}/{total_runs}...")
+
+    # Column order must match your MASTER BENCHMARK exactly for seamless pd.concat
+    COLUMN_ORDER = [
+        'method', 'p_layers', 'n_assets', 'n_bits',
+        'lambda_risk', 'lambda_reward', 'lambda_cardinality',
+        'K_target', 'mu_scalar',
+        'expected_return', 'annual_vol', 'sharpe_ratio', 
+        'active_assets', 'hhi_diversity', 
+        'prob_success', 'base_energy', 'mean_neighborhood_energy', 
+        'ruggedness', 'time_to_solve', 'portfolio_name',
+        'choice', 'neighbor_energies'
+    ]
+
+    if not os.path.isfile(csv_filename):
+        pd.DataFrame(columns=COLUMN_ORDER).to_csv(csv_filename, index=False)
+
+    for i in range(start_index, total_runs):
+        conf = dict(zip(keys, iterations[i]))
+        mode_name, _ = conf['algo']
+        
+        current_tickers = DEFAULT_PROJECT_CONFIG.tickers[:conf['n_assets']]
+        proxy = FinancialContextCommand(current_tickers, csv_path="./data/close_prices.csv")
+        
+        # We don't need mu/sigma here as DiscreteMILPPortfolio handles context internally
+        logger.info(f"[{i+1}/{total_runs}] Exact MILP | N:{conf['n_assets']} Bits:{conf['n_bits']} | K:{conf['k_target']}")
+
+        
+        
+        try:
+            hparams = QportHyperparameterProduct(
+                p_qaoa_layers=0, # MILP is non-layered
+                max_iterations=1, # MILP is exact, not iterative
+                samples=1,
+                shots=0, 
+                seed=42, 
+                lambda_cardinality=conf['l_card'],
+                lambda_risk=conf['l_risk'], 
+                lambda_reward=conf['l_reward'], 
+                k_cardinality=conf['k_target'], 
+                n_bits=conf['n_bits'],
+                mu_scalar=conf['mu_scalar'],
+                prev_weights=0.0
+            )
+            
+            # Use the proper MIQP engine class
+            model = DiscreteMILPPortfolio(name=mode_name, financial_context=proxy, hparams=hparams)
+            
+            # 1. Solve the MIQP Exactly
+            # This addresses Professor's Point #8
+            start_t = time.perf_counter()
+            res = model.run() 
+            tts = time.perf_counter() - start_t
+            
+            # 2. Extract weights and convert to the Bitstring used in the Ising Model
+            # This addresses Professor's Point #3: proving identical Hamiltonian alignment
+            w_vec = np.array(list(res.weights.values()))
+            active_count = sum(1 for w in w_vec if w > 1e-4)
+            bitstring = model.weights_to_bitstring(res.weights)
+            
+            # 3. Calculate Energy using the EXACT same QUBO mapping as QAOA
+            # This allows you to verify the "Optimality Gap"
+            qubo_dict = model.build_qubo() 
+            landscape_report = model.map_landscape_ruggedness(bitstring, qubo_dict)
+            
+            # 4. Final Row Construction
+            row = pd.DataFrame([{
+                'method': mode_name,
+                'p_layers': 0,
+                'n_assets': conf['n_assets'],
+                'n_bits': conf['n_bits'],
+                'lambda_risk': conf['l_risk'],
+                'lambda_reward': conf['l_reward'],
+                'lambda_cardinality': conf['l_card'],
+                'K_target': conf['k_target'],
+                'mu_scalar': conf['mu_scalar'],
+                'expected_return': round(res.expected_return, 6),
+                'annual_vol': round(res.volatility, 6),
+                'sharpe_ratio': round(res.sharpe_ratio, 6),
+                'active_assets': active_count,
+                'hhi_diversity': sum(w**2 for w in w_vec),
+                'prob_success': 1.0, # MILP always finds the global optimum
+                'base_energy': round(landscape_report['base_energy'], 6),
+                'mean_neighborhood_energy': landscape_report['mean_neighborhood_energy'],
+                'ruggedness': landscape_report['ruggedness'], 
+                'time_to_solve': tts,
+                'portfolio_name': json.dumps(model.name),
+                'choice': json.dumps(res.weights),
+                'neighbor_energies': landscape_report['neighbor_energies'],
+            }])
+
+            # Atomic write to CSV
+            row[COLUMN_ORDER].to_csv(csv_filename, mode='a', header=False, index=False)
+            
+            # Update checkpoint
+            with open(checkpoint_file, 'w') as f:
+                json.dump({"last_completed_index": i}, f)
+                
+        except Exception as e:
+            logger.warning(f"❌ MILP Error at index {i}: {e}")
+            continue
+
+    logger.info("🏁 Classical Exact MILP Baseline Search Complete.")
 
 def run_portfolio_stress_test():
     """

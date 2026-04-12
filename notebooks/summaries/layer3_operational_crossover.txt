@@ -2,49 +2,63 @@ LAYER 3: REGIME & OPERATIONAL CROSSOVER REPORT
 Metric: Advantage Floor (95% LCB - Baseline Median)
 ===========================================================================
 
---- SOLVER: Sim. Bifurcation ---
+--- SOLVER: Greedy S. Discrete ---
 STATUS: Operational Crossover REACHED
-EARLIEST TRANSITION: Decile 4.0 at N=4.0
-MAXIMUM ADVANTAGE: +0.0206
+EARLIEST TRANSITION: Decile 4.0 at N=8.0
+MAXIMUM ADVANTAGE: +0.4901
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0   1         2   3         4         5         6         7         8
-n                                                                                   
-4      -1.176375 NaN -0.146616 NaN  0.020646 -0.198712 -0.218100 -0.223487 -0.556156
-8      -1.080442 NaN       NaN NaN -0.034745 -0.299459 -0.495214 -0.164816 -0.600260
+decile         4         5         6         7         8
+n                                                       
+4      -0.252107  0.108782  0.297263  0.194596  0.424717
+8       0.036074  0.138824  0.311715  0.244551  0.490126
+---------------------------------------------------------------------------
+
+--- SOLVER: Sim. Bifurcation ---
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.0964
+
+Detailed Advantage Floor (LCB - Baseline Median):
+decile         0         1         2         3         4         5         6         7         8
+n                                                                                               
+4      -1.227162 -0.160718 -0.216340 -0.400397 -0.114397 -0.027525  0.096350 -0.075576       NaN
+8      -1.276802       NaN -0.144415 -0.137605 -0.146434 -0.116490 -0.034177 -0.028404 -0.079838
 ---------------------------------------------------------------------------
 
 --- SOLVER: Quantum Annealing ---
-STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.0113
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.1197
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.126341       NaN -0.011267 NaN -0.014058 -0.235318 -0.227984 -0.064152 -0.514067
-8      -1.109471 -0.205834       NaN NaN -0.135937 -0.452682 -0.458863 -0.136338 -0.518672
+decile         0        1         2         3         4         5         6         7         8
+n                                                                                              
+4      -1.239429 -0.21634 -0.146496 -0.312985 -0.197637 -0.030995  0.119733  0.034429 -0.051466
+8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.141102 -0.049797  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
 --- SOLVER: Classical Annealing ---
-STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.0113
+STATUS: Operational Crossover REACHED
+EARLIEST TRANSITION: Decile 6.0 at N=4.0
+MAXIMUM ADVANTAGE: +0.1111
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.126341       NaN -0.011267 NaN -0.014058 -0.236908 -0.227984 -0.072441 -0.514067
-8      -1.109471 -0.205834       NaN NaN -0.135937 -0.457686 -0.471220 -0.136338 -0.518672
+decile         0        1         2         3         4         5         6         7         8
+n                                                                                              
+4      -1.239429 -0.21634 -0.146496 -0.312985 -0.195333 -0.035234  0.111125  0.034429 -0.051466
+8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.145314 -0.061663  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
 --- SOLVER: Gate-based QAOA ---
 STATUS: No Operational Crossover Found
-CLOSEST APPROACH: -0.1815
+CLOSEST APPROACH: -0.1614
 
 Detailed Advantage Floor (LCB - Baseline Median):
-decile         0         1         2   3         4         5         6         7         8
-n                                                                                         
-4      -1.124919       NaN -0.181494 NaN -0.194361 -0.412392 -0.511601 -0.285617 -0.706642
-8      -0.248164 -0.294164       NaN NaN -0.461960 -0.770727 -0.791874 -0.529253 -0.905247
+decile         0         1         2         3         4         5         6         7         8
+n                                                                                               
+4      -1.246091 -0.307702 -0.345133 -0.489300 -0.376521 -0.247606 -0.161416 -0.165522 -0.256793
+8      -0.453803 -0.445317 -0.481157 -0.522174 -0.611269 -0.471939 -0.365330 -0.398071 -0.397506
 ---------------------------------------------------------------------------
 
 End of Layer 3 Report

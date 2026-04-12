@@ -13,6 +13,8 @@ Requires-Dist: yfinance
 Requires-Dist: openjij>=0.11.6
 Requires-Dist: pytest>=9.0.2
 Requires-Dist: altair>=6.0.0
+Requires-Dist: pulp>=3.3.0
+Requires-Dist: gurobipy>=13.0.1
 Provides-Extra: modeling
 Requires-Dist: qamomile[qiskit]>=0.10.0; extra == "modeling"
 Requires-Dist: marimo; extra == "modeling"

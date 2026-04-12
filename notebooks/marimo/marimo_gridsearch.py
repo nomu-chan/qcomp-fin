@@ -10,7 +10,7 @@ def _():
     import pandas as pd
     import altair as alt
     import os
-    csv_filename='./data/classical_grid_search_results.csv'
+    csv_filename='./data/gridsearch_quantum_gatebased_y_simulatedbifrucation.csv'
 
     # This cell will refresh every time the file size changes if you 
     # wrap it in a refresh logic, or you can just run it manually.
@@ -428,7 +428,6 @@ def _(df, mo):
     )
     clean_df = df.copy()
 
-
     return clean_df, color_selector
 
 
@@ -440,10 +439,10 @@ def _(alt, clean_df, mo, pd):
     def create_rugged_chart(target_color_column):
         # Interval selection for brushing
         brush = alt.selection_interval(name="brush")
-    
+
         if clean_df.empty:
             return mo.md("No data available")
-    
+
         # Background Success Zone
         success_zone = alt.Chart(pd.DataFrame({
             "ruggedness_clipped": [1e-2], "x2": [100],
@@ -451,7 +450,7 @@ def _(alt, clean_df, mo, pd):
         })).mark_rect(fill="green", opacity=0.15).encode(
             x="ruggedness_clipped:Q", x2="x2:Q", y="sharpe_ratio:Q", y2="y2:Q"
         )
-    
+
         # Main Points Layer
         points = (
                 alt.Chart(clean_df)
