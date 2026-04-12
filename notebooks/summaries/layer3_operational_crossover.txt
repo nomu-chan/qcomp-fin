@@ -2,7 +2,7 @@ LAYER 3: REGIME & OPERATIONAL CROSSOVER REPORT
 Metric: Advantage Floor (95% LCB - Baseline Median)
 ===========================================================================
 
---- SOLVER: Greedy S. Discrete ---
+--- SOLVER: Greedy Discrete Heuristic ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 4.0 at N=8.0
 MAXIMUM ADVANTAGE: +0.4901
@@ -14,7 +14,7 @@ n
 8       0.036074  0.138824  0.311715  0.244551  0.490126
 ---------------------------------------------------------------------------
 
---- SOLVER: Sim. Bifurcation ---
+--- SOLVER: Simulated Bifurcation (SB) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.0964
@@ -26,7 +26,7 @@ n
 8      -1.276802       NaN -0.144415 -0.137605 -0.146434 -0.116490 -0.034177 -0.028404 -0.079838
 ---------------------------------------------------------------------------
 
---- SOLVER: Quantum Annealing ---
+--- SOLVER: Simulated Quantum Annealing (SQA) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.1197
@@ -38,7 +38,7 @@ n
 8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.141102 -0.049797  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
---- SOLVER: Classical Annealing ---
+--- SOLVER: Simulated Annealing (SA) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.1111
@@ -50,7 +50,7 @@ n
 8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.145314 -0.061663  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
---- SOLVER: Gate-based QAOA ---
+--- SOLVER: QAOA (Transverse-Field Mixer) ---
 STATUS: No Operational Crossover Found
 CLOSEST APPROACH: -0.1614
 

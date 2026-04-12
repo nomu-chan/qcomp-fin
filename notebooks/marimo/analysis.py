@@ -95,58 +95,80 @@ def _(df_cld, df_clmilp, df_clu, df_gate, df_qca, df_qqa, df_sb, mo, plt, sns):
 
     # Assuming 'df' is your loaded and cleaned combined dataframe
     def instance_characterization(df, df_name: str):
-        # 1. Filter for unique instances to prevent solver-run weighting
-        # We include K_target and lambda_cardinality as they define the QUBO constraints
+        # 1. Filter for unique problem instances to isolate formulation effects
+        # Naming convention: K_target -> κ, lambda_cardinality -> λ_card
         instances = df.groupby([
             'n_assets', 'n_bits', 'lambda_risk', 'lambda_reward', 
             'lambda_cardinality', 'K_target'
         ]).first().reset_index()
 
-        fig, axes = plt.subplots(3, 2, figsize=(14, 18))
-        fig.suptitle(f"Layer 1 Analysis: {df_name}", fontsize=18, fontweight='bold')
-        plt.subplots_adjust(hspace=0.4, wspace=0.3)
+        fig, axes = plt.subplots(3, 2, figsize=(16, 20))
+        fig.suptitle(f"Layer 1: Problem Manifold & Formulation Characterization\nTarget: {df_name}", 
+                     fontsize=20, fontweight='bold', y=0.98)
+        plt.subplots_adjust(hspace=0.45, wspace=0.35)
 
-        # --- ROW 1: Problem Structure ---
+        # --- ROW 1: Sparsity & Landscape Topology ---
 
-        # Plot A: Distribution of Active Assets (Resulting Sparsity)
+        # Plot A: Ground-State Sparsity
         sns.histplot(instances['active_assets'], bins=10, ax=axes[0, 0], color='skyblue', kde=True)
-        axes[0, 0].set_title("Distribution of Active Assets", fontsize=12)
+        axes[0, 0].set_title(r"Ground-State Sparsity Distribution ($K_{observed}$)", fontsize=14)
+        axes[0, 0].set_xlabel("Number of Active Assets")
 
-        # Plot B: Landscape Ruggedness by Bit Depth
-        # High ruggedness usually correlates with harder optimization for QA
+        # Plot B: Autocorrelation by Precision (Bit Depth)
         sns.boxplot(data=instances, x='n_bits', y='ruggedness', ax=axes[0, 1], palette="Set2")
-        axes[0, 1].set_title("Landscape Ruggedness by Bit Depth", fontsize=12)
+        axes[0, 1].set_title(r"Landscape Autocorrelation ($\hat{\rho}$) by Binary Precision ($b$)", fontsize=14)
+        axes[0, 1].set_ylabel(r"Ruggedness Coefficient ($\hat{\rho}$)")
 
-        # --- ROW 2: Parameter Relationships ---
+        # --- ROW 2: Multi-parameter Interactions ---
 
-        # Plot C: Correlation Heatmap
-        # Identifies if parameters like n_bits are accidentally driving ruggedness
-        corr = instances[['n_assets', 'n_bits', 'lambda_risk', 'lambda_reward', 'ruggedness']].corr()
+        # Plot C: Parametric Collinearity
+        # Assessing if the Ising mapping (Hamiltonian construction) is biased
+        corr_subset = instances[['n_assets', 'n_bits', 'lambda_risk', 'lambda_reward', 'ruggedness']].rename(columns={
+            'n_assets': r'$N$ (Assets)',
+            'n_bits': r'$b$ (Precision)',
+            'lambda_risk': r'$\lambda_{\sigma^2}$ (Risk)',
+            'lambda_reward': r'$\lambda_{\mu}$ (Return)',
+            'ruggedness': r'$\hat{\rho}$ (Ruggedness)'
+        })
+
+        corr = corr_subset.corr()
         sns.heatmap(corr, annot=True, cmap='coolwarm', fmt=".2f", ax=axes[1, 0], cbar=False)
-        axes[1, 0].set_title("Input Parameter Multi-collinearity", fontsize=12)
+        axes[1, 0].set_title("QUBO Hyperparameter Multicollinearity", fontsize=14)
 
-        # Plot D: Financial Diversity (Return vs Risk Regimes)
+        # Plot D: Efficient Frontier Regimes (The "Financial" manifold)
         sns.scatterplot(data=instances, x='lambda_risk', y='expected_return', hue='n_assets', 
-                        style='n_bits', palette="viridis", ax=axes[1, 1])
-        axes[1, 1].set_title("Expected Return across Risk Regimes", fontsize=12)
-        axes[1, 1].legend(title="N Assets", bbox_to_anchor=(1.05, 1), loc='upper left')
+                        style='n_bits', palette="viridis", ax=axes[1, 1], alpha=0.7)
+        axes[1, 1].set_title(r"Reward Sensitivity ($\mu$) across Risk Regimes ($\lambda_{\sigma^2}$)", fontsize=14)
+        axes[1, 1].set_ylabel("Expected Return")
+        axes[1, 1].set_xlabel(r"Risk Weighting ($\lambda_{\sigma^2}$)")
+        axes[1, 1].legend(title="System Size ($N$)", bbox_to_anchor=(1.05, 1), loc='upper left', frameon=False)
 
-        # --- ROW 3: Optimization Difficulty Metrics ---
+        # --- ROW 3: Combinatorial Complexity ---
 
-        # Plot E: Constraint Tightness (K/N ratio)
-        # Ratios near 0.5 are often the most combinatorially difficult
+        # Plot E: Constraint Tightness (Relative Cardinality)
+        # The 'Phase Transition' region is usually around κ ≈ 0.5
         instances['k_ratio'] = instances['K_target'] / instances['n_assets']
         sns.kdeplot(data=instances, x='k_ratio', hue='n_assets', fill=True, common_norm=False, 
                     palette="tab10", ax=axes[2, 0])
-        axes[2, 0].set_title("Constraint Tightness (K/N Ratio)", fontsize=12)
-        axes[2, 0].set_xlabel("K_target / N_assets")
+        axes[2, 0].set_title(r"Constraint Tightness: Relative Cardinality ($\kappa = K/N$)", fontsize=14)
+        axes[2, 0].set_xlabel(r"Relative Capacity ($\kappa$)")
 
-        # Plot F: The Ruggedness vs. Risk Scaling
-        # Shows how the problem "difficulty" scales as the risk penalty increases
+        # Plot F: Topological Scaling
         sns.lineplot(data=instances, x='lambda_risk', y='ruggedness', hue='n_assets', 
-                     marker='o', ax=axes[2, 1])
-        axes[2, 1].set_title("Ruggedness Scaling by Risk Penalty", fontsize=12)
+                     marker='o', linewidth=2, ax=axes[2, 1], palette="tab10")
+        axes[2, 1].set_title(r"Topological Scaling: $\hat{\rho}$ vs. $\lambda_{\sigma^2}$", fontsize=14)
+        axes[2, 1].set_ylabel(r"Ruggedness ($\hat{\rho}$)")
+        axes[2, 1].set_xlabel(r"Risk Penalty Weight ($\lambda_{\sigma^2}$)")
 
+        # --- FINAL FORMATTING ---
+        # Legend pinning and alignment
+        axes[2, 1].legend(title="System Size ($N$)", bbox_to_anchor=(1.05, 1), loc='upper left', frameon=False)
+
+        for ax in axes.flat:
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+            ax.grid(True, linestyle='--', alpha=0.3)
+
+        plt.tight_layout(rect=[0, 0, 0.88, 0.96])
         return fig
 
 
@@ -250,42 +272,81 @@ def _(
     def solver_performance_analysis(df_list, names):
         # 1. Combine all data for cross-solver comparison
         combined_df = pd.concat([d.assign(method=n) for d, n in zip(df_list, names)])
-
+        unique_methods = combined_df['method'].unique()
+        colors = sns.color_palette("husl", len(unique_methods))
+        palette_dict = dict(zip(unique_methods, colors))
         # 2. Statistical Test: Kruskal-Wallis H-test for Ruggedness Perception
         # Do different solvers see significantly different landscapes?
         ruggedness_groups = [d['ruggedness'].values for d in df_list]
         h_stat, p_val = kruskal(*ruggedness_groups)
 
-        fig, axes = plt.subplots(3, 2, figsize=(16, 20))
-        fig.suptitle(f"Layer 2 Analysis: Solver Comparison & Fidelity", fontsize=20, fontweight='bold')
+        combined_df['ruggedness_decile'] = pd.qcut(combined_df['ruggedness'], 10, labels=False, duplicates='drop')
+
+        fig, axes = plt.subplots(3, 2, figsize=(20, 26)) # Slightly wider for the legend
+        fig.suptitle(r"Layer 2: Solver Fidelity & Statistical Validation", fontsize=24, fontweight='bold', y=.98)
         plt.subplots_adjust(hspace=0.4, wspace=0.3)
 
         # --- ROW 1: The "Finance" Gap ---
 
         # Plot A: Sharpe Ratio by Solver
-        sns.boxplot(data=combined_df, x='method', y='sharpe_ratio', palette="Set3", ax=axes[0, 0])
-        axes[0, 0].set_title("Sharpe Ratio Distribution by Solver", fontsize=14)
+        sns.boxplot(data=combined_df, x='method', y='sharpe_ratio', hue='method',  palette=palette_dict, ax=axes[0, 0])
+        axes[0, 0].set_title("Objective Function Distribution: Sharpe Ratio ($S$)", fontsize=14)
+        axes[0, 0].set_ylabel("Sharpe Ratio")
         axes[0, 0].tick_params(axis='x', rotation=45)
 
         # Plot B: Cardinality Violation (Constraint Fidelity)
         combined_df['k_error'] = (combined_df['active_assets'] - combined_df['K_target']).abs()
-        sns.barplot(data=combined_df, x='method', y='k_error', palette="Reds", ax=axes[0, 1])
-        axes[0, 1].set_title("Mean Cardinality Error (|Active - K|)", fontsize=14)
+        sns.barplot(data=combined_df, x='method', y='k_error', hue='method', palette=palette_dict, ax=axes[0, 1])
+        axes[0, 1].set_title(r"Mean Constraint Violation ($\epsilon_K = |K_{observed} - K_{target}|)$", fontsize=14)
+        axes[0, 1].set_ylabel("Cardinality Error")
         axes[0, 1].tick_params(axis='x', rotation=45)
 
         # --- ROW 2: The "Energy" Perception (Layer 2 Core) ---
 
         # Plot C: Perceived Ruggedness (The H-test Visual)
-        sns.violinplot(data=combined_df, x='method', y='ruggedness', ax=axes[1, 0], cut=0)
-        axes[1, 0].set_title(f"Perceived Ruggedness (H-Stat: {h_stat:.2f}, p: {p_val:.4f})", fontsize=14)
+        sns.violinplot(data=combined_df, x='method', y='ruggedness', ax=axes[1, 0], cut=0, hue='method',palette=palette_dict)
+        axes[1, 0].set_title(f"Landscape Autocorrelation ($\hat{{\\rho}}$) Perception\n(H-Stat: {h_stat:.2f}, p: {p_val:.4f})", fontsize=14)
+        axes[1, 0].set_ylabel(r"Ruggedness Coefficient ($\hat{\rho}$)")
         axes[1, 0].set_yscale('log')
         axes[1, 0].tick_params(axis='x', rotation=45)
 
-        # Plot D: Time-to-Solve vs Quality
-        sns.scatterplot(data=combined_df, x='time_to_solve', y='sharpe_ratio', hue='method', alpha=0.5, ax=axes[1, 1])
-        axes[1, 1].set_xscale('log')
-        axes[1, 1].set_title("Efficiency Frontier: Time vs Sharpe", fontsize=14)
+        # --- ROW 2, PLOT D: FORMAL PARETO FRONTIER ---
+        ax_pareto = axes[1, 1]
 
+        # 2. Plot the scatter cloud using the palette dictionary
+        sns.scatterplot(
+            data=combined_df, 
+            x='time_to_solve', 
+            y='sharpe_ratio', 
+            hue='method', 
+            palette=palette_dict,  # FIXED
+            alpha=0.1, 
+            edgecolor=None, 
+            ax=ax_pareto, 
+            legend=False
+        )
+
+        # 3. Plot the frontier lines using the same palette dictionary
+        for name in names:
+            m_data = combined_df[combined_df['method'] == name].copy()
+            if not m_data.empty:
+                m_data = m_data.sort_values('time_to_solve')
+                m_data['frontier_sharpe'] = m_data['sharpe_ratio'].cummax()
+
+                sns.lineplot(
+                    data=m_data, 
+                    x='time_to_solve', 
+                    y='frontier_sharpe', 
+                    color=palette_dict[name],  # FIXED: Explicitly pull from the map
+                    ax=ax_pareto, 
+                    linewidth=3, 
+                    drawstyle='steps-post',
+                    label=name
+                )
+
+        # Final Legend and Axis cleanup
+        ax_pareto.set_xscale('log')
+        ax_pareto.legend(bbox_to_anchor=(1.05, 1), loc='upper left', frameon=False)
         # --- ROW 3: Spearman Validation (Thesis-Grade Fidelity) ---
 
         # Plot E: Spearman Correlation Heatmap (Energy vs Sharpe)
@@ -299,25 +360,63 @@ def _(
                 corrs.append({'method': name, 'spearman_rho': rho})
 
         corr_df = pd.DataFrame(corrs)
-        sns.barplot(data=corr_df, x='method', y='spearman_rho', palette="coolwarm", ax=axes[2, 0])
-        axes[2, 0].set_title("QUBO Fidelity: Spearman(Energy, Sharpe)", fontsize=14)
+        sns.barplot(data=corr_df, x='method', y='spearman_rho', palette=palette_dict, hue='method', ax=axes[2, 0])
+        axes[2, 0].set_title(r"QUBO Hamiltonian Fidelity: $r_s(H(\mathbf{x}), S)$", fontsize=14)
+        axes[2, 0].set_ylabel("Spearman Rank Correlation")
         axes[2, 0].axhline(0, color='black', linewidth=0.8)
         axes[2, 0].tick_params(axis='x', rotation=45)
 
-        # Plot F: Sharpe Decay vs Ruggedness
-        sns.lineplot(data=combined_df, x='ruggedness', y='sharpe_ratio', hue='method', ax=axes[2, 1])
-        axes[2, 1].set_title("Solver Resilience to Landscape Ruggedness", fontsize=14)
-        axes[2, 1].set_xscale('log')
+        # --- ROW 3, PLOT F: CLEANED RESILIENCE ---
+        # We use binned ruggedness on the X-axis for a smoother curve
+        resilience_ax = axes[2, 1]
+        sns.lineplot(
+            data=combined_df, 
+            x='ruggedness_decile', # Use the binned deciles instead of raw floats
+            y='sharpe_ratio', 
+            hue='method', 
+            ax=resilience_ax,
+            estimator='mean',      
+            errorbar=('ci', 95),   # Confidence bands will now be smooth
+            linewidth=3.5,
+            marker='o',            # Adds points to show the trend clearly
+            palette=palette_dict
+        )
 
+        resilience_ax.set_title(r"Solver Resilience to Landscape Complexity Cohorts", fontsize=16, pad=15)
+        resilience_ax.set_xlabel(r"Landscape Ruggedness Decile ($\hat{\rho}_{10}$)", labelpad=12)
+        resilience_ax.set_ylabel("Mean Sharpe Ratio ($S$)")
+        resilience_ax.set_xticks(range(10)) # Ensure 0-9 deciles are marked
+        resilience_ax.grid(True, axis='y', ls="--", alpha=0.3)
+
+        # --- THE LEGEND FIX: PINNED TO FAR RIGHT ---
+        # We move the legend totally outside the plot area
+        resilience_ax.legend(
+            title=r"$\bf{Solver\ Hierarchy}$", 
+            bbox_to_anchor=(1.05, 1), 
+            loc='upper left', 
+            borderaxespad=0.,
+            frameon=True,
+            shadow=True,
+            fontsize=12
+        )
+
+        # --- THE LABEL ALIGNMENT FIX ---
+        for ax in axes.flat:
+            # Tick alignment: ha='right' + rotation_mode='anchor' removes the gap
+            plt.setp(ax.get_xticklabels(), rotation=45, ha='right', rotation_mode='anchor')
+            ax.tick_params(axis='both', which='major', labelsize=11)
+
+        # Increase the right margin (0.80) to ensure the legend isn't cut off
+        plt.tight_layout(rect=[0, 0, 0.82, 0.96]) 
         return fig
 
-    CL_IDEAL_BASELINE = 'Ideal Baseline'
-    CL_GREEDY_BASELINE = 'Greedy S. Discrete'
-    CL_MILP_BASELINE = 'MILP Discrete'
-    CL_SIMBIF = 'Sim. Bifurcation'
-    QM_ANNEALING_QUANTUM = 'Quantum Annealing'
-    QM_ANNEALING_CLASSICAL = 'Classical Annealing'
-    QM_GATEBASED_QAOA = 'Gate-based QAOA'
+    CL_IDEAL_BASELINE = 'Efficient Frontier'
+    CL_GREEDY_BASELINE = 'Greedy Discrete Heuristic'
+    CL_MILP_BASELINE = 'MIQP Discrete Global Optimum'
+    CL_SIMBIF = 'Simulated Bifurcation (SB)'
+    QM_ANNEALING_QUANTUM = 'Simulated Quantum Annealing (SQA)'
+    QM_ANNEALING_CLASSICAL = 'Simulated Annealing (SA)'
+    QM_GATEBASED_QAOA = 'QAOA (Transverse-Field Mixer)'
 
     # Execution block
     dfs = [df_clu, df_cld, df_clmilp, df_sb, df_qqa, df_qca, df_gate]
@@ -363,7 +462,7 @@ def _(dfs, names):
 
             # Section 2: Performance & Constraint Fidelity
             f.write("--- SECTION 2: SOLVER PERFORMANCE & CONSTRAINT FIDELITY ---\n")
-            f.write(f"{'Method':<25} | {'Med Sharpe':<10} | {'Mean K-Err':<10} | {'Spearman Rho'}\n")
+            f.write(f"{'Method':<25} | {'Med Sharpe':<10} | {'Mean K-Err':<10} | {'Spearman Rho'} \n")
             f.write("-" * 70 + "\n")
 
             for name in names:
@@ -436,7 +535,7 @@ def _(
         df = df.copy()
         # Handle deciles safely
         df['rug_decile'] = pd.qcut(df['ruggedness'], 10, labels=False, duplicates='drop')
-    
+
         # FIX: Identify unique solvers that aren't the baseline or the ideal unconstrained
         # This ensures that when the subset only has [Solver, Baseline], 'solvers' becomes [Solver]
         solvers = [c for c in df['method'].unique() if c not in [CL_IDEAL_BASELINE, baseline_col]]
@@ -479,17 +578,16 @@ def _(
 
             # REMOVE OR COMMENT OUT THIS LINE:
             # pivot = df.pivot(index='lambda_risk', columns='n_assets', values='sharpe_ratio')
-    
+
             if pivot.empty or pivot.isna().all().all():
                 print(f"⚠️ Warning: No crossover data for {solver} against {baseline_col}.")
                 continue
-            
+
             sns.heatmap(pivot, annot=True, fmt=".3f", cmap="RdYlGn", center=0, ax=axes[i])
-            axes[i].set_title(f"{solver} vs {baseline_col}\nAdvantage Floor (LCB - Median)")
-            # Point 11: Technical Labels
-            axes[i].set_xlabel("Landscape Ruggedness Decile")
-            axes[i].set_ylabel("Asset Count (N)")
-        
+            axes[i].set_title(f"{solver} vs. MIQP\nAdvantage Floor ($\Delta_{{LCB}}$)")
+            axes[i].set_xlabel(r"Landscape Ruggedness Decile ($\hat{\rho}$)")
+            axes[i].set_ylabel(r"Asset Universe Size ($N$)")
+
         return fig, gap_df
 
     # To find the exact threshold using Segmented Regression logic:
@@ -505,7 +603,7 @@ def _(
         Satisfies Point 8 (Benchmark Quality) and Point 12 (Spacing).
         """
         baseline_col = CL_MILP_BASELINE 
-    
+
         # Identify solvers to compare against the MILP baseline
         # Excludes the baseline itself and the Ideal (Unconstrained) baseline
         solvers = [n for n in names if n not in [CL_IDEAL_BASELINE, baseline_col]]
@@ -514,11 +612,11 @@ def _(
         for solver in solvers:
             # 1. Isolate the comparison pair
             subset_df = df[df['method'].isin([solver, baseline_col])]
-        
+
             # Guard clause: Check if baseline data exists for these assets/bits
             if subset_df[subset_df['method'] == baseline_col].empty:
                 continue
-            
+
             # 2. Perform the Crossover Gap Analysis
             # Returns (Matplotlib Figure, DataFrame with 'advantage' and 'advantage_floor')
             fig, boundary_data = crossover_gap_analysis(subset_df, baseline_col=baseline_col)
@@ -527,7 +625,7 @@ def _(
             if boundary_data is not None and not boundary_data.empty:
                 # We look for the 'advantage' flag (LCB > Median)
                 transition_row = boundary_data[boundary_data['advantage'] == 1]
-            
+
                 if not transition_row.empty:
                     # Find the first decile where quantum/heuristic starts winning
                     transition_decile = transition_row['rug_decile'].min()
@@ -549,7 +647,7 @@ def _(
             # 4. Append to Marimo view with Layout Fixes (Point 12)
             method_views.append(mo.md(f"### {solver} vs. {baseline_col}"))
             method_views.append(mo.md(transition_text))
-        
+
             if fig is not None:
                 # mo.as_html converts the plt figure to a static element
                 method_views.append(mo.as_html(fig))

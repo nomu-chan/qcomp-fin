@@ -282,26 +282,26 @@ Note: High H-stat confirms that solver paradigms perceive unique ruggedness
 profiles for identical problem instances.
 
 --- SECTION 2: SOLVER PERFORMANCE & CONSTRAINT FIDELITY ---
-Method                    | Med Sharpe | Mean K-Err | Spearman Rho
+Method                    | Med Sharpe | Mean K-Err | Spearman Rho 
 ----------------------------------------------------------------------
-Ideal Baseline            | 1.6211     | 1.6599     | nan
-Greedy S. Discrete        | 1.5106     | 1.4427     | -0.5776
-MILP Discrete             | 1.2168     | 0.6667     | -0.2959
-Sim. Bifurcation          | 1.2295     | 0.7143     | -0.2961
-Quantum Annealing         | 1.2003     | 0.7922     | -0.2520
-Classical Annealing       | 1.1988     | 0.7886     | -0.2535
-Gate-based QAOA           | 0.9658     | 2.3678     | 0.0243
+Efficient Frontier        | 1.6211     | 1.6599     | nan
+Greedy Discrete Heuristic | 1.5106     | 1.4427     | -0.5776
+MIQP Discrete Global Optimum | 1.2168     | 0.6667     | -0.2959
+Simulated Bifurcation (SB) | 1.2295     | 0.7143     | -0.2961
+Simulated Quantum Annealing (SQA) | 1.2003     | 0.7922     | -0.2520
+Simulated Annealing (SA)  | 1.1988     | 0.7886     | -0.2535
+QAOA (Transverse-Field Mixer) | 0.9658     | 2.3678     | 0.0243
 
 --- SECTION 3: COMPUTATIONAL EFFICIENCY ---
 Method                    | Avg Time (s) | Max Time (s)
 ------------------------------------------------------------
-Ideal Baseline            | 0.01532      | 0.02252
-Greedy S. Discrete        | 0.01478      | 0.07854
-MILP Discrete             | 0.03592      | 0.24492
-Sim. Bifurcation          | 0.30624      | 0.62869
-Quantum Annealing         | 6.00056      | 9.78374
-Classical Annealing       | 0.12271      | 0.16068
-Gate-based QAOA           | 2.93234      | 431.60807
+Efficient Frontier        | 0.01532      | 0.02252
+Greedy Discrete Heuristic | 0.01478      | 0.07854
+MIQP Discrete Global Optimum | 0.03592      | 0.24492
+Simulated Bifurcation (SB) | 0.30624      | 0.62869
+Simulated Quantum Annealing (SQA) | 6.00056      | 9.78374
+Simulated Annealing (SA)  | 0.12271      | 0.16068
+QAOA (Transverse-Field Mixer) | 2.93234      | 431.60807
 
 ======================================================================
 End of Layer 2 Report
@@ -318,7 +318,7 @@ LAYER 3: REGIME & OPERATIONAL CROSSOVER REPORT
 Metric: Advantage Floor (95% LCB - Baseline Median)
 ===========================================================================
 
---- SOLVER: Greedy S. Discrete ---
+--- SOLVER: Greedy Discrete Heuristic ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 4.0 at N=8.0
 MAXIMUM ADVANTAGE: +0.4901
@@ -330,7 +330,7 @@ n
 8       0.036074  0.138824  0.311715  0.244551  0.490126
 ---------------------------------------------------------------------------
 
---- SOLVER: Sim. Bifurcation ---
+--- SOLVER: Simulated Bifurcation (SB) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.0964
@@ -342,7 +342,7 @@ n
 8      -1.276802       NaN -0.144415 -0.137605 -0.146434 -0.116490 -0.034177 -0.028404 -0.079838
 ---------------------------------------------------------------------------
 
---- SOLVER: Quantum Annealing ---
+--- SOLVER: Simulated Quantum Annealing (SQA) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.1197
@@ -354,7 +354,7 @@ n
 8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.141102 -0.049797  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
---- SOLVER: Classical Annealing ---
+--- SOLVER: Simulated Annealing (SA) ---
 STATUS: Operational Crossover REACHED
 EARLIEST TRANSITION: Decile 6.0 at N=4.0
 MAXIMUM ADVANTAGE: +0.1111
@@ -366,7 +366,7 @@ n
 8      -1.305831 -0.35120 -0.222791 -0.182519 -0.326618 -0.145314 -0.061663  0.061995 -0.005266
 ---------------------------------------------------------------------------
 
---- SOLVER: Gate-based QAOA ---
+--- SOLVER: QAOA (Transverse-Field Mixer) ---
 STATUS: No Operational Crossover Found
 CLOSEST APPROACH: -0.1614
 
@@ -398,69 +398,69 @@ Dep. Variable:           sharpe_ratio   R-squared:                       0.416
 Model:                            OLS   Adj. R-squared:                  0.414
 Method:                 Least Squares   F-statistic:                     182.3
 Date:                Sun, 12 Apr 2026   Prob (F-statistic):               0.00
-Time:                        21:19:34   Log-Likelihood:                -378.47
+Time:                        23:44:23   Log-Likelihood:                -378.47
 No. Observations:                4884   AIC:                             796.9
 Df Residuals:                    4864   BIC:                             926.8
 Df Model:                          19                                         
 Covariance Type:            nonrobust                                         
-=====================================================================================================================
-                                                        coef    std err          t      P>|t|      [0.025      0.975]
----------------------------------------------------------------------------------------------------------------------
-Intercept                                             1.2176      0.033     36.625      0.000       1.152       1.283
-method_clean[T.Gate_based_QAOA]                      -0.3011      0.038     -7.850      0.000      -0.376      -0.226
-method_clean[T.Greedy_S__Discrete]                    0.0459      0.056      0.817      0.414      -0.064       0.156
-method_clean[T.Ideal_Baseline]                        0.3069      0.053      5.747      0.000       0.202       0.412
-method_clean[T.MILP_Discrete]                         0.1133      0.047      2.399      0.016       0.021       0.206
-method_clean[T.Quantum_Annealing]                     0.0004      0.047      0.008      0.994      -0.092       0.093
-method_clean[T.Sim__Bifurcation]                     -0.0104      0.066     -0.157      0.876      -0.140       0.120
-log_ruggedness                                       -0.0095      0.017     -0.563      0.573      -0.043       0.024
-method_clean[T.Gate_based_QAOA]:log_ruggedness        0.0107      0.029      0.367      0.714      -0.047       0.068
-method_clean[T.Greedy_S__Discrete]:log_ruggedness     0.1075      0.027      3.996      0.000       0.055       0.160
-method_clean[T.Ideal_Baseline]:log_ruggedness     -1.991e-17   5.52e-17     -0.361      0.718   -1.28e-16    8.82e-17
-method_clean[T.MILP_Discrete]:log_ruggedness         -0.1207      0.027     -4.534      0.000      -0.173      -0.069
-method_clean[T.Quantum_Annealing]:log_ruggedness     -0.0004      0.024     -0.018      0.985      -0.047       0.046
-method_clean[T.Sim__Bifurcation]:log_ruggedness      -0.0547      0.062     -0.878      0.380      -0.177       0.068
-n_assets                                             -0.0182      0.005     -3.532      0.000      -0.028      -0.008
-method_clean[T.Gate_based_QAOA]:n_assets              0.0153      0.006      2.563      0.010       0.004       0.027
-method_clean[T.Greedy_S__Discrete]:n_assets           0.0315      0.008      3.761      0.000       0.015       0.048
-method_clean[T.Ideal_Baseline]:n_assets               0.0303      0.008      3.615      0.000       0.014       0.047
-method_clean[T.MILP_Discrete]:n_assets                0.0158      0.007      2.172      0.030       0.002       0.030
-method_clean[T.Quantum_Annealing]:n_assets            0.0002      0.007      0.027      0.979      -0.014       0.015
-method_clean[T.Sim__Bifurcation]:n_assets             0.0095      0.010      0.920      0.358      -0.011       0.030
+====================================================================================================================================
+                                                                       coef    std err          t      P>|t|      [0.025      0.975]
+------------------------------------------------------------------------------------------------------------------------------------
+Intercept                                                            1.5245      0.042     36.468      0.000       1.443       1.606
+method_clean[T.Greedy_Discrete_Heuristic]                           -0.2610      0.062     -4.233      0.000      -0.382      -0.140
+method_clean[T.MIQP_Discrete_Global_Optimum]                        -0.1936      0.054     -3.611      0.000      -0.299      -0.088
+method_clean[T.QAOA__Transverse_Field_Mixer_]                       -0.6081      0.046    -13.226      0.000      -0.698      -0.518
+method_clean[T.Simulated_Annealing__SA_]                            -0.3069      0.053     -5.747      0.000      -0.412      -0.202
+method_clean[T.Simulated_Bifurcation__SB_]                          -0.3173      0.071     -4.467      0.000      -0.457      -0.178
+method_clean[T.Simulated_Quantum_Annealing__SQA_]                   -0.3066      0.054     -5.724      0.000      -0.412      -0.202
+log_ruggedness                                                      -0.0164      0.011     -1.531      0.126      -0.037       0.005
+method_clean[T.Greedy_Discrete_Heuristic]:log_ruggedness             0.1144      0.021      5.528      0.000       0.074       0.155
+method_clean[T.MIQP_Discrete_Global_Optimum]:log_ruggedness         -0.1139      0.020     -5.571      0.000      -0.154      -0.074
+method_clean[T.QAOA__Transverse_Field_Mixer_]:log_ruggedness         0.0176      0.023      0.770      0.441      -0.027       0.063
+method_clean[T.Simulated_Annealing__SA_]:log_ruggedness              0.0069      0.018      0.386      0.699      -0.028       0.042
+method_clean[T.Simulated_Bifurcation__SB_]:log_ruggedness           -0.0479      0.052     -0.923      0.356      -0.150       0.054
+method_clean[T.Simulated_Quantum_Annealing__SQA_]:log_ruggedness     0.0064      0.018      0.362      0.718      -0.029       0.041
+n_assets                                                             0.0121      0.007      1.829      0.067      -0.001       0.025
+method_clean[T.Greedy_Discrete_Heuristic]:n_assets                   0.0013      0.009      0.138      0.890      -0.017       0.020
+method_clean[T.MIQP_Discrete_Global_Optimum]:n_assets               -0.0144      0.008     -1.726      0.084      -0.031       0.002
+method_clean[T.QAOA__Transverse_Field_Mixer_]:n_assets              -0.0150      0.007     -2.071      0.038      -0.029      -0.001
+method_clean[T.Simulated_Annealing__SA_]:n_assets                   -0.0303      0.008     -3.615      0.000      -0.047      -0.014
+method_clean[T.Simulated_Bifurcation__SB_]:n_assets                 -0.0208      0.011     -1.878      0.060      -0.043       0.001
+method_clean[T.Simulated_Quantum_Annealing__SQA_]:n_assets          -0.0301      0.008     -3.583      0.000      -0.047      -0.014
 ==============================================================================
 Omnibus:                     1992.815   Durbin-Watson:                   1.152
 Prob(Omnibus):                  0.000   Jarque-Bera (JB):             9687.476
 Skew:                          -1.936   Prob(JB):                         0.00
-Kurtosis:                       8.710   Cond. No.                     4.76e+17
+Kurtosis:                       8.710   Cond. No.                     7.18e+15
 ==============================================================================
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
-[2] The smallest eigenvalue is 1.09e-30. This might indicate that there are
+[2] The smallest eigenvalue is 4.83e-27. This might indicate that there are
 strong multicollinearity problems or that the design matrix is singular.
 
 --- 2. PAIRED WILCOXON TESTS (vs. Baseline) ---
 No paired data available for testing.
 
 --- 3. BOOTSTRAP 95% CONFIDENCE INTERVALS ---
-             method  Sharpe_Mean_LCB  Sharpe_Mean_UCB
-     Ideal Baseline         1.594876         1.599288
- Greedy S. Discrete         1.395317         1.427871
-      MILP Discrete         1.248147         1.276223
-   Sim. Bifurcation         1.101244         1.180122
-  Quantum Annealing         1.081030         1.127511
-Classical Annealing         1.082686         1.128754
-    Gate-based QAOA         0.885441         0.911515
+                           method  Sharpe_Mean_LCB  Sharpe_Mean_UCB
+               Efficient Frontier         1.594631         1.599410
+        Greedy Discrete Heuristic         1.396880         1.427219
+     MIQP Discrete Global Optimum         1.247138         1.276750
+       Simulated Bifurcation (SB)         1.103507         1.179795
+Simulated Quantum Annealing (SQA)         1.082610         1.129928
+         Simulated Annealing (SA)         1.082742         1.128373
+    QAOA (Transverse-Field Mixer)         0.885835         0.912012
 
 --- 4. ALGORITHMIC SCALING EXPONENTS ---
-             method  exponent
-     Ideal Baseline  0.016357
- Greedy S. Discrete  0.033157
-Classical Annealing  0.165763
-   Sim. Bifurcation  0.182535
-  Quantum Annealing  0.237330
-      MILP Discrete  0.676775
-    Gate-based QAOA  1.886751
+                           method  exponent
+               Efficient Frontier  0.016357
+        Greedy Discrete Heuristic  0.033157
+         Simulated Annealing (SA)  0.165763
+       Simulated Bifurcation (SB)  0.182535
+Simulated Quantum Annealing (SQA)  0.237330
+     MIQP Discrete Global Optimum  0.676775
+    QAOA (Transverse-Field Mixer)  1.886751
 
 --- END OF REPORT ---
 ----------------------------------------
