@@ -11,6 +11,8 @@ Quantum Portfolio Optimization (Mean-Variance) starter project.
 
 Goal: build an Efficient Frontier workflow with a classical Markowitz baseline, then encode a binary portfolio-selection version as QUBO for quantum optimization (QAOA or VQE).
 
+[Link to Paper](https://github.com/nomu-chan/qcomp-fin/blob/main/docs/main.pdf)
+
 ## 1) Quick Start
 
 This project uses a Dual-Environment Architecture to separate high-level financial modeling from heavy GPU-accelerated simulation. This prevents C++ build conflicts and keeps the workspace clean.
